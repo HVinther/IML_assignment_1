@@ -1,7 +1,25 @@
-library(CASdatasets)
-library(splitTools)
-
 loadData<-function(seed = 2024){
+  # Checker dependencies og evt. installere disse
+  dependencies <- c("xts","sp","zoo","CASdatasets","splitTools")
+  md<-c()
+  for(dep in dependencies){
+    if(!require(eval(dep),character.only = T)){
+      md<-append(md,dep)
+    }
+  }
+  if(length(md)>0){
+    cat("The following dependencies have not been met:\n")
+    cat(paste(md),"\n")
+    answer<-tolower(readline(paste("Do you wish to install them? [y/N] : ")))
+    if(answer == "y"){
+      install.packages(md[md != "CASdatasets"])
+      if("CASdatasets" %in% md){
+        install.packages("CASdatasets", repos = "http://cas.uqam.ca/pub/", type="source")
+      }
+    }
+    library("splitTools","CASdatasets")
+  }
+  
   # Henter datasættene som beskrevet, men i funktionens enviroment istedet for det globale
   data(freMPL1,envir = environment())
   
@@ -28,4 +46,4 @@ loadData<-function(seed = 2024){
   # Tømmer alt fra det funktionens enviroment, ie. de store dataset, som allerede er gemt i det globale enviroment
   rm(list = ls())
 }
-
+loadData()
