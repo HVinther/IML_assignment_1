@@ -1,5 +1,5 @@
 
-loadData<-function(seed = 2022){
+loadData<-function(seed = 2024){
   # Checker dependencies og evt. installere disse
   dependencies <- c("xts","sp","zoo","CASdatasets","splitTools")
   md<-c()
