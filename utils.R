@@ -1,4 +1,3 @@
-
 loadData<-function(seed = 2024){
   # Checker dependencies og evt. installere disse
   dependencies <- c("xts","sp","zoo","CASdatasets","splitTools")
@@ -36,14 +35,18 @@ loadData<-function(seed = 2024){
   
   freMPL <- rbind(freMPL1,freMPL2,freMPL3,freMPL4)
   
+  freMPL$RecordBeg<-as.POSIXct(freMPL$RecordBeg)
+  freMPL$RecordEnd<-as.POSIXct(freMPL$RecordEnd)
+  
   set.seed(seed) 
   
   # De relevante objekter skubbes ud til det globale enviroment
   freMPL <<- freMPL
-  ind <<- partition(freMPL$ClaimInd, p = c(train = 0.8, test = 0.2)) #### train and test have the same claim frequency
+  ind <<- splitTools::partition(freMPL$ClaimInd, p = c(train = 0.8, test = 0.2)) #### train and test have the same claim frequency
   train <<- freMPL[ind$train, ] 
   test <<- freMPL[ind$test, ]
   
   # Tømmer alt fra det funktionens enviroment, ie. de store dataset, som allerede er gemt i det globale enviroment
   rm(list = ls())
 }
+
