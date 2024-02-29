@@ -55,6 +55,11 @@ po_VehAge_num<-po(
 ## Weights -----------------------------------
 
 ## Creates a weighting using exposure and sets it as the weigthing
+sigmoid<-function(x,k){
+  inner<-exp((x-0.5)*k)
+  return(inner/(1+inner))
+}
+
 po_add_weighting<-
   po("mutate",
      id = "create_weight",
