@@ -50,3 +50,29 @@ po_VehAge_num<-po(
                             "10+" ~ 10,
                             .default = as.numeric(VehAge)))
 )
+
+
+## Weights -----------------------------------
+
+## Creates a weighting using exposure and sets it as the weigthing
+sigmoid<-function(x,k){
+  inner<-exp((x-0.5)*k)
+  return(inner/(1+inner))
+}
+
+po_add_weighting<-
+  po("mutate",
+     id = "create_weight",
+     mutation =list(
+       weights =~sigmoid(
+         Exposure,
+         12
+         )
+       ))%>>%
+  po("colroles",
+     id = "set_weight",
+     new_role = list(
+       weights = "weight"
+       ))
+
+
