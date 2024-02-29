@@ -28,7 +28,7 @@ po_SocCat_int<-po(
   "mutate",
   id = "SocioCateg_as_integer",
   mutation = list(
-    SocioCateg = ~as.integer(substr(SocioCateg,4,5))),
+    SocioCateg = ~as.integer(substr(SocioCateg,4,5)))
 )
 
 # Reencodes VehPrice as integer using the default ordering
@@ -48,5 +48,5 @@ po_VehAge_num<-po(
                             "6-7" ~ 6.5,
                             "8-9" ~ 8.5,
                             "10+" ~ 10,
-                            .default = as.numeric(VehAge))),
+                            .default = as.numeric(VehAge)))
 )
