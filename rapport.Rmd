@@ -109,6 +109,7 @@ An alternative weighting approach more enlign with standard methods would be to 
 ```{r}
 train |> 
   group_by(sign(ClaimAmount))|>
-  summarize(n()/nrow(train))
+  summarize(rel_freq = n()/nrow(train))|>
+  mutate(reciprocal_rel_freq = 1/rel_freq)
 ```
 Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... bla.. reciprocal frequency
