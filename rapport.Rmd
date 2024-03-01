@@ -68,7 +68,7 @@ $f:[0,1]\longrightarrow\mathbb{R}_{>=0}$
 
 While weighting is normally done to fit models on imbalanced datasets, the same method should allow us to prioritize a precise fit on the ... of interest while hopefully still extracting some information from the remaining dataset.
 
-$$w_i = f_k(\text{Exposure}_i):= \frac{\exp((\text{Exposure}_i-0.5)\cdot k)}{1+\exp((\text{Exposure}_i-0.5)\cdot k)} $$
+$$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)} $$
 
 ```{r, echo=FALSE}
 x<- seq(from = 0,
