@@ -1,6 +1,6 @@
 ---
 title: "IML assignment 1"
-author: "Hans Vinther-Larsen"
+author: "Emil Skindersø, Christopher Fjeldberg Jensen and Hans Vinther-Larsen"
 date: "2024-02-26"
 output: html_document
 ---
@@ -9,22 +9,106 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+library(tidyverse)
+source("utils.R")
+loadData()
+```
+# Introduction
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+can be found on github at https://github.com/HVinther/IML_assignment_1
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Data exploration, encoding and weighting
 
-```{r cars}
-summary(cars)
+The dataset is a subset of the freMPL datasets from the CASdatasets library. 
+
+## Encoding of dates and handling of missing values
+
+Two <Date> columns are present in the dataset, RecordBeg and RecordEnd representing the beginning and end dates of recording. Several choices have to be made in the handling of these variables. First of, the `as_task` functions from `mlr3`cannot handle the <Date> datatype. A quick reencoding as `POSIXct`overcomes this initial hurdle - this will however need further encoding, as most models cannot handle the `POSIXct` class directly, but this can now be done inside a GraphLearner object. 
+
+Before settling on an encoding strategy a second issue has to be considered. The RecordEnd variable has an abundance of missing values, in both the full dataset and in the training dataset about $46\%$ of the observations of this variable are missing. In particular these seem to be a result of right censoring, as all observations are within the year 2004, these particular observations are those, where the record has not ended within the year. Imputing these variables based on the nonmissing would expectedly result in an under estimation of their values.
+
+We suggest and investigate the following encoding strategies for these variables:
+
+A numerical encoding,imputing using lastest observed date and indicating censoring
+
+```{r, eval = FALSE}
+# Interpretes RecordEnd as being right censored.
+# Thus imputes using the maximal observed time, 
+# and adds column indicating censoring.
+po_RecEnd_rc<-po(
+  "mutate",
+  mutation = list(
+    RecordEnd = ~as.numeric(ifelse(is.na(RecordEnd),
+                                   max(na.omit(RecordEnd)),
+                                   RecordEnd)),
+    RecordEnd_censored = ~is.na(RecordEnd)
+  ),
+  id = "RecEnd_rc"
+)
+
+# Reencodes RecordBeg (POSIXct) to numeric
+po_RecBeg_num<-po(
+  "mutate",
+  mutation = list(
+    RecordBeg = ~as.numeric(RecordBeg)
+  ),
+  id = "RecBeg_num"
+)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+## Encoding of remaining covariates
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+## Weighting
+
+### By interest
+As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we ...
+$f:[0,1]\longrightarrow\mathbb{R}_{>=0}$
+
+While weighting is normally done to fit models on imbalanced datasets, the same method should allow us to prioritize a precise fit on the ... of interest while hopefully still extracting some information from the remaining dataset.
+
+$$w_i = f_k(\text{Exposure}_i):= \frac{\exp((\text{Exposure}_i-0.5)\cdot k)}{1+\exp((\text{Exposure}_i-0.5)\cdot k)} $$
+
+```{r, echo=FALSE}
+x<- seq(from = 0,
+        to = 1,
+        length.out = 101)
+
+sigmoid <- function(x,k = 12){
+  inner <- exp((x-0.5)*k)
+  return(inner/(1+inner))
+}
+
+ggplot()+
+  geom_line(
+    aes(x = x,
+        y = sigmoid(x))
+  )
+```
+This weighting ... for $k=12$
+```{r, eval = FALSE}
+## Creates a weighting using exposure and sets it as the weigthing
+po_add_weighting<-
+  po("mutate",
+     id = "create_weight",
+     mutation =list(
+       weights =~exp((Exposure-0.5)*12)/(1+exp((Exposure-0.5)*12))
+       ))%>>%
+  po("colroles",
+     id = "set_weight",
+     new_role = list(
+       weights = "weight"
+       ))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### By frequency
+
+An alternative weighting approach more enlign with standard methods would be to weight to tackle the imbaling with respect to the sign of `ClaimAmount`. A quick 
+
+```{r}
+train |> 
+  group_by(sign(ClaimAmount))|>
+  summarize(n()/nrow(train))
+```
+Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... bla.. reciprocal frequency
