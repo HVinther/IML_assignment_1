@@ -12,27 +12,63 @@ Rforest_lrn_part <- lrn("regr.ranger",
                    respect.unordered.factors = "partition"
                    )
 
-Dummy_rforest <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% Rforest_lrn |> as_learner()
+Dummy_rforest <- po("encode") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
 
-Rforest_lrn_part_basic <- po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger",
-                        respect.unordered.factors = "partition") |> as_learner()
+Target_rforest <- po("encodeimpact") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
 
-Custom_rforest_basic <- po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
+glmm_rforest <- po("encodelmer", affect_columns = selector_type("factor")) %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
+
+##Rforest_lrn_part <- po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger",
+                        ##respect.unordered.factors = "partition") |> as_learner()
+
+## Har valgt ikke at implementere med native ranger target encoding (bruge partition) da det tager over 1 time at køre en enkelt gang.
+
+Custom_rforest_dummy <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
   po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
 
-Dummy_rforest_basic$train(train_task)
+Custom_rforest_target <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
+  po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
 
+Custom_rforest_glmm <- po_add_weighting %>>% po_SocCat_num %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
+  po("encodelmer", affect_columns = selector_type("factor")) %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
 
-AT_create <- function(lrn_obj){
+rforest_BM <- benchmark_grid(
+  tasks = train_task,
+  learners = list(Dummy_rforest,Target_rforest,glmm_rforest,Custom_rforest_dummy,Custom_rforest_target),
+  resamplings = rsmp("cv",folds = 3)
+) |> benchmark()
+
+Custom_rforest_dummy$train(train_task)
+
+Custom_rforest_target$train(train_task)
+
+Custom_rforest_glmm$train(train_task)
+
+Custom_rforest_dummy$predict(test_task)
+
+Custom_rforest_target$predict(test_task)
+
+Custom_rforest_glmm$predict(test_task)
+
+AT_create <- function(lrn_object){
   return(auto_tuner(
     tuner = tnr("random_search"),
-    learner = lrn_obj,
+    learner = lrn_object,
     resampling = rsmp("cv", folds = 5),
     measure = msr("regr.mse"),
-    terminator = trm("evals",n_evals = 20)
-  ))
+    terminator = trm("evals", n_evals = 20)
+    )
+  )
 }
 
-Dummy_rforest_AT <- AT_create(Dummy_rforest)
+rforest_BM <- benchmark_grid(
+  tasks = train_task,
+  learners = list(Custom_rforest_glmm, Custom_rforest_dummy,Custom_rforest_target, Dummy_rforest,Target_rforest),
+  resamplings = rsmp("cv",folds = 3)
+) |> benchmark()
 
-Dummy_rforest_AT$train(train_task)
+Dummy_rforest_at <- AT_create(po("encode") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% Rforest_lrn |> as_learner())
+
+Target_rforest_at <- AT_create(po("encodeimpact") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% Rforest_lrn |> as_learner())
+
+Dummy_rforest_at$train(train_task)
