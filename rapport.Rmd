@@ -113,3 +113,44 @@ train |>
   mutate(reciprocal_rel_freq = 1/rel_freq)
 ```
 Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... bla.. reciprocal frequency
+
+# Choosing Learners and Encoding
+
+For training an algorithm we decided to focus on three different learners, we chose to focus on a glmnet, gradient boost and random forest. We also considered implement some k-nearest neighbours algorithms, but decided against it due to the amount of features we have in the data.
+
+## Glmnet
+
+## Gradient Boost
+
+## Random Forest
+For the random forest implementation we used the ranger package. First when creating our random forest learners we decided that since the random forest learnes standard hyperparameters usually produce good results tuning the learners wasn't necessary. 
+
+As for our encoding strategy here we decided as a baseline to implement algorithms using Dummy encoding, target encoding and glmm encoding. For each of these three encoders we had to different versions.
+
+```{r, eval=FALSE}
+Dummy_rforest <- po("encode") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
+
+Target_rforest <- po("encodeimpact") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
+
+glmm_rforest <- po("encodelmer", affect_columns = selector_type("factor")) %>>% po_add_weighting %>>%  po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner() 
+
+Custom_rforest_dummy <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+
+Custom_rforest_target <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+
+Custom_rforest_glmm <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encodelmer", affect_columns = selector_type("factor")) %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+```
+
+We then ran a benchmark to compare how the different factor encodings performed with the random forest. We can see the perfomance of our algorithms in the graph below.
+
+```{r}
+load("RforestBM.RData")
+ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
+                                 msr("time_train"))))+
+  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id))+
+  geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
+             linetype = "dashed")+
+  xlab("time")+
+  ylab("Mean Squared Error")
+```
+First thing to note is that we do not have a point for the pure glmm encoding, this is because when we ran the benchmark with that learner we got an error we couldn't fix. But by looking at the plot it is just the simple target encoding which has performs the best, furthermore it's also the fastest.
