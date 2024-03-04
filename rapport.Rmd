@@ -128,8 +128,8 @@ For a more fair comparison of our algorithms we decided on a common encoding str
 ```{r, eval=FALSE}
 Dummy_lrn <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
 Target_lrn <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Dummy_lrn_SocCat <- po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Target_lrn_SocCat <- po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
 ```
 
 we have chosen these encoding strategies because ...
@@ -153,7 +153,7 @@ learner_BM <- benchmark_grid(
 
 We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
 
-The random forest implementation has some well-performing standard hyper-parameters and we therefore chose to just use these and not perform any tuning of the hyperparameters.
+The random forest implementation has some well-performing standard hyper-parameters, but given our rather large training dataset
 
 ```{r}
 load("RforestBM.RData")
