@@ -20,13 +20,33 @@ grph_base<-
   po("encode")%>>%
   po("scale")
 
-lrn_glmnet<-
-  lrn("regr.cv_glmnet") |>
-  set_id(id = "cv_glmnet")
+lrn_glmnet<-set_id(
+      lrn("regr.cv_glmnet"),
+      id = "cv_glmnet")
 
 lrn_xboost<-
   lrn("regr.xgboost") |>
   set_id("xgboost")
+
+lrn_gam<-
+  lrn("regr.gam")|>
+  set_id("gam")
+
+lrn_ensemble<-
+  gunion(list(
+    po("learner_cv",
+       learner =lrn("regr.gam"),
+       resampling.folds = 5,
+       id = "gam"),
+    po("learner_cv",
+       learner =lrn("regr.xgboost"),
+       resampling.folds = 5,
+       id = "xgboost"))
+    ) %>>%
+  po("featureunion") %>>%
+  po("learner", learner = lrn("regr.lm")) |>
+  as_learner()|>
+  set_id("ensemble")
 
 graph_list<-list(
   "full" = grph_full,
@@ -35,9 +55,10 @@ graph_list<-list(
 
 learner_list<-list(
   lrn_glmnet,
-  lrn_xboost
+  lrn_xboost,
+  lrn_gam,
+  lrn_ensemble
 )
-
 
 future::plan("multisession")
 
@@ -54,7 +75,7 @@ bm<-benchmark(
         graph_list,
         learner_list),
       lrn("regr.featureless")),
-    resamplings = rsmp("cv",folds = 5)
+    resamplings = rsmp("cv",folds = 2)
   )
 )
 
@@ -64,13 +85,13 @@ bm$aggregate()
 
 bm$aggregate(list(msr("regr.mse"),msr("time_train")))|>
   ggplot()+
-  geom_hline(aes(yintercept = log(regr.mse), 
+  geom_hline(aes(yintercept = regr.mse, 
                  color = learner_id),
              linetype = "dashed",
              linewidth = 1,
              alpha = 0.8)+
   geom_point(aes(x= time_train,
-                 y = log(regr.mse),
+                 y = regr.mse,
                  color = learner_id,
                  shape = task_id),
              size = 5)
