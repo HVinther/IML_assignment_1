@@ -118,6 +118,18 @@ Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... 
 
 For training an algorithm we decided to focus on three different learners, we chose to focus on a glmnet, gradient boost and random forest. We also considered implement some k-nearest neighbours algorithms, but decided against it due to the amount of features we have in the data.
 
+## Encoding strategy
+
+For a more fair comparison of our algorithms we decided on a common encoding strategy across all the learners. We begin with some simple baseline graphs, with no weighting and no custom encoding. Next we create some graphs with our own encoder for the `SocioCateg` variable. We then run these again with both our `interest` and our `frequency` weighting.
+
+```{r, eval=FALSE}
+Dummy_lrn_NW <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn_NW <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn_SocCat_NW <- po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn_SocCat_NW <- po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+```
+
+
 ## Glmnet
 
 ## Gradient Boost
