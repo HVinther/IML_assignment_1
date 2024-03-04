@@ -116,44 +116,35 @@ Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... 
 
 # Choosing Learners and Encoding
 
-For training an algorithm we decided to focus on three different learners, we chose to focus on a glmnet, gradient boost and random forest. We also considered implement some k-nearest neighbours algorithms, but decided against it due to the amount of features we have in the data.
+When implementing our algorithm we decided to focus our attention on three different learners: Glmnet, Gradient boost and random forest. We also considered trying with a k-neareast neighbours learner, but we deemed that the dimension was too large
+for it to get a good result.
+
+Also to choose our best performing algorithm we decided on the approach of first comparing encoding strategies within the same and learner and choose the best performing algorithm for each learner, and then compare our best algorithm along with featureless learner. When deciding on which algorithm is the best performing we resample with 5-fold cross-validation and then we plot the mean squared error. 
 
 ## Encoding strategy
 
-For a more fair comparison of our algorithms we decided on a common encoding strategy across all the learners. We begin with some simple baseline graphs, with no weighting and no custom encoding. Next we create some graphs with our own encoder for the `SocioCateg` variable. We then run these again with both our `interest` and our `frequency` weighting.
+For a more fair comparison of our algorithms we decided on a common encoding strategy across all the learners. We begin with some simple baseline graphs, with no weighting and no custom encoding. Next we create some graphs with our own encoder for the `SocioCateg` variable.
 
 ```{r, eval=FALSE}
-Dummy_lrn_NW <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Target_lrn_NW <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Dummy_lrn_SocCat_NW <- po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Target_lrn_SocCat_NW <- po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn_SocCat <- po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn_SocCat <- po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
 ```
 
+we have chosen these encoding strategies because ...
+
+For testing purposes we then compare these on the normal training task, and also on tasks with either our interest weighting or our frequency weighting.
 
 ## Glmnet
 
 ## Gradient Boost
 
 ## Random Forest
-For the random forest implementation we used the ranger package. First when creating our random forest learners we decided that since the random forest learnes standard hyperparameters usually produce good results tuning the learners wasn't necessary. 
 
-As for our encoding strategy here we decided as a baseline to implement algorithms using Dummy encoding, target encoding and glmm encoding. For each of these three encoders we had to different versions.
+We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
 
-```{r, eval=FALSE}
-Dummy_rforest <- po("encode") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
-
-Target_rforest <- po("encodeimpact") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
-
-glmm_rforest <- po("encodelmer", affect_columns = selector_type("factor")) %>>% po_add_weighting %>>%  po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner() 
-
-Custom_rforest_dummy <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
-
-Custom_rforest_target <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
-
-Custom_rforest_glmm <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% po("encodelmer", affect_columns = selector_type("factor")) %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
-```
-
-We then ran a benchmark to compare how the different factor encodings performed with the random forest. We can see the perfomance of our algorithms in the graph below.
+The random forest implementation has some well-performing standard hyper-parameters and we therefore chose to just use these and not perform any tuning of the hyperparameters.
 
 ```{r}
 load("RforestBM.RData")
