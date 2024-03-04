@@ -44,7 +44,7 @@ po_VehAge_num<-po(
   "mutate",
   id = "VehAge_as_num",
   mutation = list(
-    VehAge = ~case_match(VehAge,
+    VehAge = ~dplyr::case_match(VehAge,
                             "6-7" ~ 6.5,
                             "8-9" ~ 8.5,
                             "10+" ~ 10,
