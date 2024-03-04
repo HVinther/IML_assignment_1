@@ -136,6 +136,15 @@ we have chosen these encoding strategies because ...
 
 For testing purposes we then compare these on the normal training task, and also on tasks with either our interest weighting or our frequency weighting.
 
+```{r,eval=FALSE}
+learner_BM <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(Dumm_lrn, Target_lrn,Dummy_lrn_SocCat,Target_lrn_SocCat),
+  resamplings = rsmp("cv",folds=3)
+)|> benchmark()
+```
+
+
 ## Glmnet
 
 ## Gradient Boost
