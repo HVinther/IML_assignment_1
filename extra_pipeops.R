@@ -117,3 +117,48 @@ add_weight<-function(dataset,
     return(out)
   }
 }
+
+
+## Combine graphs and learners ------------------------------------------------------
+# Changes the id of a leaner
+set_id<-function(lrn, id){
+  lrn$id<-id
+  return(lrn)
+}
+
+# makes all combinations of graphs and learners. If a list of graphs i provided, it should be named. 
+combine_graphs_and_learners<-function(graphs,learners){
+  assert_learners(as_learners(learners))
+  if(!is.list(learners)){
+    learners<-list(learners)
+  }
+  if(is.list(graphs)){
+    invisible(lapply(graphs, assert_graph))
+    grph_names<-names(graphs)
+    stopifnot(length(unique(grph_names))==length(graphs))
+    out<-list()
+    for(i in seq_along(graphs)){
+      for(j in seq_along(learners)){
+        out<-append(out,
+                    graphs[[i]]%>>%
+                      learners[[j]]|>
+                      as_learner()|>
+                      set_id(paste0(grph_names[i],
+                                    "_",
+                                    learners[[j]]$id,
+                                    sep = "")))
+      }
+    }
+  } else {
+    assert_graph(graphs)
+    out<-list()
+    for(j in seq_along(learners)){
+      out<-append(out,
+                  graphs%>>%
+                    learners[[j]]|>
+                    as_learner()|>
+                    set_id(learners[[j]]$id))
+    }
+  }
+  return(out)
+}
