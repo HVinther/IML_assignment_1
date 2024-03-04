@@ -153,16 +153,16 @@ learner_BM <- benchmark_grid(
 
 We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
 
-The random forest implementation has some well-performing standard hyper-parameters, but given our rather large training dataset
+The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
 
 ```{r}
 load("RforestBM.RData")
 ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
                                  msr("time_train"))))+
-  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id))+
+  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
   geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
              linetype = "dashed")+
   xlab("time")+
   ylab("Mean Squared Error")
 ```
-First thing to note is that we do not have a point for the pure glmm encoding, this is because when we ran the benchmark with that learner we got an error we couldn't fix. But by looking at the plot it is just the simple target encoding which has performs the best, furthermore it's also the fastest.
+So from this plot we note that target encoding outperforms dummy encoding when using it on our random forest learner. Furthermore we note that our own encodings also performs better than without, but the benefit is smaller for when using it with target encoding. It should also be noted that our encodings were computationally faster with dummy encoding but slower for target encoding. But overall we would conclude that our custom target encoding is the best performing encoding when using a random forest learner.
