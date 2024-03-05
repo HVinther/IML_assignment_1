@@ -172,3 +172,35 @@ at_create <- function(graph,folds=5,n_evals=20){
                     measure=msr("regr.mse"),
                     terminator=trm("evals",n_evals=n_evals)))
 }
+
+
+## Custom measure -----------------------
+# Measure to compare models on Exposure == 1 using mse
+MeasureRegrMSEinterest = R6::R6Class("MeasureRegrMSEinterest",
+  inherit = mlr3::MeasureRegr, # regression measure
+  public = list(
+    initialize = function() { # initialize class
+      super$initialize(
+        id = "mse_inter", # unique ID
+        packages = character(), # no package dependencies
+        properties = "requires_task", # no special properties
+        predict_type = "response", # measures response prediction
+        range = c(0, Inf), # results in values between (0, 1)
+        minimize = TRUE # larger values are better
+      )
+    }
+  ),
+
+  private = list(
+    # define score as private method
+    .score = function(prediction, task,...) {
+      # define loss
+      expo<-task$data()$Exposure[prediction$row_ids]
+      ind_of_interest <- (expo == 1)
+      mean((prediction$truth[ind_of_interest] - prediction$response[ind_of_interest])^2)
+      }
+  )
+)
+
+# adds the measure to the dictionary
+mlr_measures$add("regr.mse_inter",MeasureRegrMSEinterest)
