@@ -9,33 +9,29 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-<<<<<<< HEAD
-
-# Notes
-
-We do not train on claim indicator = 0, since this provides no information about claim amount.
-
-
-
-
-
-
-
-
-
-=======
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
 library(tidyverse)
 source("utils.R")
+source("libraries.R")
+source("extra_pipeobs.R")
 loadData()
 ```
 # Introduction
 
+In this project we use different machinelearning models to predict the claim amount for individual customers of an insurance company. Particularly, we are interested in predicting the claim amount for customers who have had insurance for at least a whole year (i.e exposure=1). Aside from choosing suitable factor encodings and models, we are interested in optimizing our choices such that the predictions are best at exposure=1. To this end, we employ weightings and custom measures (see the following paragraphs).
 can be found on github at https://github.com/HVinther/IML_assignment_1
 
 # Data exploration, encoding and weighting
 
-The dataset is a subset of the freMPL datasets from the CASdatasets library. 
+The dataset is a subset of the freMPL datasets from the CASdatasets library. It is split into training and testing with 80% of the data being used for training. 
+
+```{r}
+head(freMPL)
+```
+
+The data consists of some variables such as vehicle price and age, as well as social class, which can be encoded either as factors or as numerical. Additionally for categorical variables, we try with dummy and target encoding.
+
+Since we are interested in optimizing best for exposure=1, we make some weight functions such that individuals whose exposure is closer to 1 are more important that individuals with low exposure.
 
 ## Encoding of dates and handling of missing values
 
@@ -199,4 +195,12 @@ ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
   ylab("Mean Squared Error")
 ```
 So from this plot we note that target encoding outperforms dummy encoding when using it on our random forest learner. Furthermore we note that our own encodings also performs better than without, but the benefit is smaller for when using it with target encoding. It should also be noted that our encodings were computationally faster with dummy encoding but slower for target encoding. But overall we would conclude that our custom target encoding is the best performing encoding when using a random forest learner.
->>>>>>> 9fe6c703dd61fe8355c781478aa5fce666d5de43
+
+# Comparing learners
+
+## Custom measure
+In order to evaluate which algorithm has best predictive performance, we evaluate the MSE only at the data where exposure=1. The idea being that standard MSE also awards good predictions at lower exposures, but we are not interested in having good predictive performance at these levels.
+
+## Comparison
+
+
