@@ -94,7 +94,7 @@ add_weight<-function(dataset,
                       1 ~ case_values[3])
     }
     if("interest" %in% weighting){
-      w<-w*.sigmoid(dataset$Exposure,k = 12, location)
+      w<-w*.sigmoid(dataset$Exposure,k, location)
     }
     return(mutate(dataset,weights = w))
   } else if("Task" %in% class(dataset)){
@@ -107,7 +107,7 @@ add_weight<-function(dataset,
                       1 ~ case_values[3])
     }
     if("interest" %in% weighting){
-      w<-w*.sigmoid(data$Exposure,k = 12, location)
+      w<-w*.sigmoid(data$Exposure,k, location)
     }
     out<-as_task_regr(
       mutate(data,weights = w),
