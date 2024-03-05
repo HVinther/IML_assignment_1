@@ -180,7 +180,7 @@ ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
 ```
 Where the first plot is a histogram of the mse at the different folds, and the second plot illustrates the average mse for the different combinations, with training time in seconds.
 
-It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average mse, but the spread is comparable across all encoding strategies. 
+It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average mse, but the variance is comparable across all encoding strategies according to the boxplot. We can see both a lower mean and variance in the interest-weighting strategy, although the median is higher here. These values should be taken with a grain of salt since it is only based on 5 fold cv and has no chance of converging on representable values.
 
 ## Random Forest
 
