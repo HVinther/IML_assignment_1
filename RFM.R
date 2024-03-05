@@ -1,74 +1,97 @@
 
+future::plan("multisession")
+
 train_task <- as_task_regr(train,target = "ClaimAmount")
 
 test_task <- as_task_regr(test, target = "ClaimAmount")
 
 Rforest_lrn <- lrn("regr.ranger",
-                   min.node.size = to_tune(1, 50)) 
+                   min.node.size = to_tune(1, 50))
 
-Rforest_lrn_part <- lrn("regr.ranger",
-                   mtry.ratio = to_tune(0.1, 1),
-                   min.node.size = to_tune(1, 50),
-                   respect.unordered.factors = "partition"
-                   )
+Dummy_rforest_lrn <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.ranger", id = "Dummy_rforest") |> as_learner()
+Target_rforest_lrn <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.ranger") |> as_learner()
+Dummy_rforest_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.ranger") |> as_learner()
+Target_rforest_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.ranger") |> as_learner()
 
-Dummy_rforest <- po("encode") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
+Dummy_rforest_lrn$id <- "dmy_Rfor"
+Dummy_rforest_lrn_custom$id <- "dmy_Rfor_cus"
+Target_rforest_lrn$id <- "Trgt_Rfor"
+Target_rforest_lrn_custom$id <- "Trgt_Rfor_cus"
 
-Dummy_rforest$id <- "Dummy_rforest"
+Dummy_rforest_lrn$train(train_task)
+Dummy_rforest_lrn_custom$train(train_task)
+Target_rforest_lrn$train(train_task)
+Target_rforest_lrn_custom$train(train_task)
 
-Target_rforest <- po("encodeimpact") %>>% po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner()
+Dummy_rforest_lrn_at <- auto_tuner(
+  tuner = tnr("grid_search",resolution = 5),
+  learner = Dummy_rforest_lrn,
+  resampling = rsmp("cv",folds = 5),
+  measure = msr("regr.mse"),
+  terminator = trm("evals",n_evals = 20)
+)
 
-Target_rforest$id <- "Target_rforest"
+Dummy_rforest_lrn_at$train(train_task)
 
-glmm_rforest <- po("encodelmer", affect_columns = selector_type("factor")) %>>% po_add_weighting %>>%  po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger") |> as_learner() 
+Dummy_rforest_lrn_at$model$learner$param_set$values$regr.ranger.min.node.size
 
-## Rforest_lrn_part <- po_add_weighting %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger",
-                        ##respect.unordered.factors = "partition") |> as_learner()
+Target_rforest_lrn_at <- auto_tuner(
+  tuner = tnr("grid_search",resolution = 5),
+  learner = Target_rforest_lrn,
+  resampling = rsmp("cv",folds = 5),
+  measure = msr("regr.mse"),
+  terminator = trm("evals",n_evals = 20)
+)
 
-## Har valgt ikke at implementere med native ranger target encoding (bruge partition) da det tager over 1 time at køre en enkelt gang.
+Target_rforest_lrn_at$train(train_task)
 
-Custom_rforest_dummy <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
-  po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+Target_rforest_lrn_at$model$learner$param_set$values$regr.ranger.min.node.size
 
-Custom_rforest_dummy$id <- "Custom_rforest_dummy"
+rforest_BM3 <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(lrn("regr.featureless"), Dummy_rforest_lrn,Dummy_rforest_lrn_custom,Target_rforest_lrn,Target_rforest_lrn_custom),
+  resamplings = rsmp("cv",folds=3)
+)|> benchmark()
 
-Custom_rforest_target <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
-  po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+save(rforest_BM3, file = "RforestBM3.RData")
 
-Custom_rforest_target$id <- "Custom_rforest_target"
+rforest_BM5 <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(lrn("regr.featureless"), Dummy_rforest_lrn,Dummy_rforest_lrn_custom,Target_rforest_lrn,Target_rforest_lrn_custom),
+  resamplings = rsmp("cv",folds=5)
+)|> benchmark()
 
-Custom_rforest_glmm <- po_add_weighting %>>% po_SocCat_int %>>% po_VehAge_num %>>% po_VehPrice_int %>>% 
-  po("encodelmer", affect_columns = selector_type("factor")) %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% lrn("regr.ranger")|> as_learner()
+save(rforest_BM5, file = "RforestBM5.RData")
 
-Custom_rforest_glmm$id <- "Custom_rforest_glmm"
+rforest_BM10 <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(lrn("regr.featureless"), Dummy_rforest_lrn,Dummy_rforest_lrn_custom,Target_rforest_lrn,Target_rforest_lrn_custom),
+  resamplings = rsmp("cv",folds=10)
+)|> benchmark()
 
-rforest_BM <- benchmark_grid(
-  tasks = train_task,
-  learners = list(Dummy_rforest,Target_rforest,Custom_rforest_glmm, Custom_rforest_dummy,Custom_rforest_target),
-  resamplings = rsmp("cv",folds = 5)
-) |> benchmark()
+save(rforest_BM10, file = "RforestBM10.RData")
 
-benchmark_grid(
-  tasks = train_task,
-  learners = list(glmm_rforest),
-  resamplings = rsmp("cv",folds = 2)
-) |> benchmark()
+rforest_BM20 <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(lrn("regr.featureless"), Dummy_rforest_lrn,Dummy_rforest_lrn_custom,Target_rforest_lrn,Target_rforest_lrn_custom),
+  resamplings = rsmp("cv",folds=20)
+)|> benchmark()
 
-save(rforest_BM, file = "RforestBM.RData")
+save(rforest_BM20, file = "RforestBM20.RData")
 
-load("RforestBM.RData")
+load("RforestBM20.RData")
 
 rforest_BM$aggregate(list(msr("regr.mse"),
                           msr("time_train")))
 
-ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
+ggplot(rforest_BM5$aggregate(list(msr("regr.mse"),
                                  msr("time_train"))))+
-  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id))+
+  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape=task_id))+
   geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
              linetype = "dashed")+
   xlab("time")+
   ylab("Mean Squared Error")
 
-autoplot(rforest_BM, type = "boxplot")
+rforest_BM20$filter(learner_ids = list("dmy_Rfor","dmy_Rfor_cus","Trgt_Rfor","Trgt_Rfor_cus"))
 
-autoplot(rforest_BM, type = "roc")
+rforest_BM$aggregate(list(msr("regr.mse"),msr("time_train")))
