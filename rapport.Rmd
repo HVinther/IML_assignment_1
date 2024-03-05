@@ -25,7 +25,7 @@ We do not train on claim indicator = 0, since this provides no information about
 
 =======
 ```{r, echo=FALSE, message=FALSE,warning=FALSE}
-source("libraries.R")
+library(tidyverse)
 source("utils.R")
 loadData()
 ```
@@ -147,7 +147,7 @@ Dummy_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% p
 Target_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
 ```
 
-we have chosen these encoding strategies because ...
+We have chosen these encoding strategies because dummy and target encoding are two commonly used encoding strategies, so it is relevant to compare these. We also deem that turning the categorical features into numerical ones could have an effect, in a the sense that assuming a linear effect of these features could improve performance.
 
 For testing purposes we then compare these on the normal training task, and also on tasks with either our interest weighting or our frequency weighting.
 
@@ -163,6 +163,24 @@ learner_BM <- benchmark_grid(
 ## Glmnet
 
 ## Gradient Boost
+
+We wanted to work with XGBoost because it is a widely used ML-model, which often has fairly strong predictive power. 
+
+There are a lot of hyperparameters to tune, and we select two of them. The first is the choice of booster, particularly 'dart', 'gbtree' and 'gblinear' where the first two are tree-based and the third is a linear function approximation. The second is the max_depth of the tree, in the case that the learner is tree-based, and this is tested between 1 and 500 at a step-length of 50. We use 5-fold cross-validation for hyper-parameter tuning.
+
+In order to make a choice of weighting and encoding, as described above, we use all 4 combinations of weighting (no weight, frequency, interest and both) and all 4 factors (dummy,target,numeric dummy and numeric target). The results are as follows:
+
+```{r}
+bench_mark = readRDS("xgbench")
+plot(bench_mark)
+
+ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
+  geom_point(mapping=aes(x=time_train,y=regr.mse,colour=learner_id,shape=task_id))+
+  geom_hline(mapping=aes(yintercept=regr.mse,colour=learner_id,linetype=task_id))
+```
+Where the first plot is a histogram of the mse at the different folds, and the second plot illustrates the average mse for the different combinations, with training time in seconds.
+
+It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average mse, but the spread is comparable across all encoding strategies. 
 
 ## Random Forest
 
