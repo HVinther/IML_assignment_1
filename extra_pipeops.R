@@ -87,26 +87,26 @@ add_weight<-function(dataset,
   stopifnot(any(weighting %in% c("interest","frequency")))
   if("data.frame" %in% class(dataset)){
     w<-rep(1,times = nrow(dataset))
-    if("interest"%in% weighting){
+    if("frequency"%in% weighting){
       w<-w*case_match(sign(dataset$ClaimAmount),
                       -1 ~ case_values[1],
                       0 ~ case_values[2],
                       1 ~ case_values[3])
     }
-    if("frequency" %in% weighting){
+    if("interest" %in% weighting){
       w<-w*.sigmoid(dataset$Exposure,k = 12, location)
     }
     return(mutate(dataset,weights = w))
   } else if("Task" %in% class(dataset)){
     data <- dataset$data() |> as.data.frame()
     w<-rep(1,times = nrow(data))
-    if("interest"%in% weighting){
+    if("frequency"%in% weighting){
       w<-w*case_match(sign(data$ClaimAmount),
                       -1 ~ case_values[1],
                       0 ~ case_values[2],
                       1 ~ case_values[3])
     }
-    if("frequency" %in% weighting){
+    if("interest" %in% weighting){
       w<-w*.sigmoid(data$Exposure,k = 12, location)
     }
     out<-as_task_regr(
