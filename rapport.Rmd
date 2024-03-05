@@ -1,6 +1,6 @@
 ---
 title: "IML assignment 1"
-author: "Hans Vinther-Larsen"
+author: "Emil Skindersø, Christopher Fjeldberg Jensen and Hans Vinther-Larsen"
 date: "2024-02-26"
 output: html_document
 ---
@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+<<<<<<< HEAD
 
 # Notes
 
@@ -22,3 +23,162 @@ We do not train on claim indicator = 0, since this provides no information about
 
 
 
+=======
+```{r, echo=FALSE, message=FALSE,warning=FALSE}
+library(tidyverse)
+source("utils.R")
+loadData()
+```
+# Introduction
+
+can be found on github at https://github.com/HVinther/IML_assignment_1
+
+# Data exploration, encoding and weighting
+
+The dataset is a subset of the freMPL datasets from the CASdatasets library. 
+
+## Encoding of dates and handling of missing values
+
+Two <Date> columns are present in the dataset, RecordBeg and RecordEnd representing the beginning and end dates of recording. Several choices have to be made in the handling of these variables. First of, the `as_task` functions from `mlr3`cannot handle the <Date> datatype. A quick reencoding as `POSIXct`overcomes this initial hurdle - this will however need further encoding, as most models cannot handle the `POSIXct` class directly, but this can now be done inside a GraphLearner object. 
+
+Before settling on an encoding strategy a second issue has to be considered. The RecordEnd variable has an abundance of missing values, in both the full dataset and in the training dataset about $46\%$ of the observations of this variable are missing. In particular these seem to be a result of right censoring, as all observations are within the year 2004, these particular observations are those, where the record has not ended within the year. Imputing these variables based on the nonmissing would expectedly result in an under estimation of their values.
+
+We suggest and investigate the following encoding strategies for these variables:
+
+A numerical encoding,imputing using lastest observed date and indicating censoring
+
+```{r, eval = FALSE}
+# Interpretes RecordEnd as being right censored.
+# Thus imputes using the maximal observed time, 
+# and adds column indicating censoring.
+po_RecEnd_rc<-po(
+  "mutate",
+  mutation = list(
+    RecordEnd = ~as.numeric(ifelse(is.na(RecordEnd),
+                                   max(na.omit(RecordEnd)),
+                                   RecordEnd)),
+    RecordEnd_censored = ~is.na(RecordEnd)
+  ),
+  id = "RecEnd_rc"
+)
+
+# Reencodes RecordBeg (POSIXct) to numeric
+po_RecBeg_num<-po(
+  "mutate",
+  mutation = list(
+    RecordBeg = ~as.numeric(RecordBeg)
+  ),
+  id = "RecBeg_num"
+)
+```
+
+
+## Encoding of remaining covariates
+
+## Weighting
+
+### By interest
+As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we ...
+$f:[0,1]\longrightarrow\mathbb{R}_{>=0}$
+
+While weighting is normally done to fit models on imbalanced datasets, the same method should allow us to prioritize a precise fit on the ... of interest while hopefully still extracting some information from the remaining dataset.
+
+$$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)} $$
+
+```{r, echo=FALSE}
+x<- seq(from = 0,
+        to = 1,
+        length.out = 101)
+
+sigmoid <- function(x,k = 12){
+  inner <- exp((x-0.5)*k)
+  return(inner/(1+inner))
+}
+
+ggplot()+
+  geom_line(
+    aes(x = x,
+        y = sigmoid(x))
+  )
+```
+This weighting ... for $k=12$
+```{r, eval = FALSE}
+## Creates a weighting using exposure and sets it as the weigthing
+po_add_weighting<-
+  po("mutate",
+     id = "create_weight",
+     mutation =list(
+       weights =~exp((Exposure-0.5)*12)/(1+exp((Exposure-0.5)*12))
+       ))%>>%
+  po("colroles",
+     id = "set_weight",
+     new_role = list(
+       weights = "weight"
+       ))
+```
+
+### By frequency
+
+An alternative weighting approach more enlign with standard methods would be to weight to tackle the imbaling with respect to the sign of `ClaimAmount`. A quick 
+
+```{r}
+train |> 
+  group_by(sign(ClaimAmount))|>
+  summarize(rel_freq = n()/nrow(train))|>
+  mutate(reciprocal_rel_freq = 1/rel_freq)
+```
+Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... bla.. reciprocal frequency
+
+# Choosing Learners and Encoding
+
+When implementing our algorithm we decided to focus our attention on three different learners: Glmnet, Gradient boost and random forest. We also considered trying with a k-neareast neighbours learner, but we deemed that the dimension was too large
+for it to get a good result.
+
+Also to choose our best performing algorithm we decided on the approach of first comparing encoding strategies within the same and learner and choose the best performing algorithm for each learner, and then compare our best algorithm along with featureless learner. When deciding on which algorithm is the best performing we resample with 5-fold cross-validation and then we plot the mean squared error. 
+
+## Encoding strategy
+
+For a more fair comparison of our algorithms we decided on a common encoding strategy across all the learners. We begin with some simple baseline graphs, with no weighting and no custom encoding. Next we create some graphs with our own encoder for the `SocioCateg` variable.
+
+```{r, eval=FALSE}
+Dummy_lrn <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Target_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+```
+
+we have chosen these encoding strategies because ...
+
+For testing purposes we then compare these on the normal training task, and also on tasks with either our interest weighting or our frequency weighting.
+
+```{r,eval=FALSE}
+learner_BM <- benchmark_grid(
+  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
+  learners = list(Dumm_lrn, Target_lrn,Dummy_lrn_SocCat,Target_lrn_SocCat),
+  resamplings = rsmp("cv",folds=3)
+)|> benchmark()
+```
+
+
+## Glmnet
+
+## Gradient Boost
+
+## Random Forest
+
+We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
+
+The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
+
+```{r}
+load("RforestBM.RData")
+ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
+                                 msr("time_train"))))+
+  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
+  geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
+             linetype = "dashed")+
+  xlab("time")+
+  ylab("Mean Squared Error")
+```
+So from this plot we note that target encoding outperforms dummy encoding when using it on our random forest learner. Furthermore we note that our own encodings also performs better than without, but the benefit is smaller for when using it with target encoding. It should also be noted that our encodings were computationally faster with dummy encoding but slower for target encoding. But overall we would conclude that our custom target encoding is the best performing encoding when using a random forest learner.
+>>>>>>> 9fe6c703dd61fe8355c781478aa5fce666d5de43

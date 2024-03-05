@@ -1,3 +1,14 @@
+library(mlr3)
+library(mlr3learners)
+library(mlr3tuning)
+library(OpenML)
+library(mlr3pipelines)
+library(future)
+library(tidyverse)
+library(lme4)
+library(nloptr)
+library(mlr3misc)
+
 loadData<-function(seed = 2024){
   # Checker dependencies og evt. installere disse
   dependencies <- c("xts","sp","zoo","CASdatasets","splitTools")
