@@ -189,8 +189,10 @@ We choose to do a random forest algorithm because we wanted to implement a tree 
 The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
 
 ```{r}
-load("RforestBM.RData")
-ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
+load("RforestBM5.RData")
+plot(rforest_BM5)
+
+ggplot(rforest_BM5$aggregate(list(msr("regr.mse"),
                                  msr("time_train"))))+
   geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
   geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
@@ -199,4 +201,22 @@ ggplot(rforest_BM$aggregate(list(msr("regr.mse"),
   ylab("Mean Squared Error")
 ```
 So from this plot we note that target encoding outperforms dummy encoding when using it on our random forest learner. Furthermore we note that our own encodings also performs better than without, but the benefit is smaller for when using it with target encoding. It should also be noted that our encodings were computationally faster with dummy encoding but slower for target encoding. But overall we would conclude that our custom target encoding is the best performing encoding when using a random forest learner.
->>>>>>> 9fe6c703dd61fe8355c781478aa5fce666d5de43
+
+```{r}
+rforest_BM52 <- rforest_BM5$clone()
+rforest_BM52$filter(learner_ids = list("dmy_Rfor","dmy_Rfor_cus","Trgt_Rfor","Trgt_Rfor_cus"))
+```
+
+```{r}
+plot(rforest_BM52)
+
+ggplot(rforest_BM52$aggregate(list(msr("regr.mse"),
+                                 msr("time_train"))))+
+  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
+  geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
+             linetype = "dashed")+
+  xlab("time")+
+  ylab("Mean Squared Error")
+```
+
+
