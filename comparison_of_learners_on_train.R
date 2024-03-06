@@ -88,19 +88,20 @@ design<-benchmark_grid(
 
 future::plan("multisession")
 
-bw_comp<-benchmark(design)
+bm_comp<-benchmark(design)
 
 future::plan("sequential")
 
 scor<-
-  bm$score(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 
+  bm_comp$score(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 
+  tibble() |> 
+  select(-c("uhash","task","resampling","prediction"))
+
+aggr<-
+  bm_comp$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 
   tibble() |> 
   select(-resample_result)
 
-aggr<-
-  bm$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 
-  tibble() |> 
-  select(-c("uhash","task","resampling","prediction"))
 
 saveRDS(scor,"bw_train_comp_scor.rds")
 saveRDS(aggr,"bw_train_comp_aggr.rds")
