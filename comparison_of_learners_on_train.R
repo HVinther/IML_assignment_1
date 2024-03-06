@@ -73,7 +73,7 @@ design<-benchmark_grid(
     append(
       ge,
       list(
-        "xgboost" = ,
+        "xgboost" = Dummy_lrn_custom,
         "ranger" = 
       ))
     ,
