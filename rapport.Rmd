@@ -199,7 +199,7 @@ learner_BM <- benchmark_grid(
 
 ## Glmnet, Gam and ensemble learner
 
-In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one.
+In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one. The definition of the learners as well as the benchmarking can be found in the GlmAndGams.R file in the github repository.
 
 Note, the naming of the encoding are slightly different as opposed to those described in section Encoding Stratgies. Here pipes between encodings are indicated by a ".", and the naming of different encodings are as follows,
 
