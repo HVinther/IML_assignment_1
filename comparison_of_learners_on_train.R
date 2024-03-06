@@ -1,7 +1,7 @@
 source("libraries.R")
 source("utils.R")
 source("extra_pipeops.R")
-source("grph_lists.R")
+
 loadData()
 
 train_task <- as_task_regr(train,target = "ClaimAmount")
@@ -60,31 +60,21 @@ Dummy_lrn_custom <-
 
 
 ## design
-n_folds <- 5
-
 design<-benchmark_grid(
-  tasks = list(
-    add_weight(task,"interest"),
-    add_weight(task,"interest"),
-    add_weight(task,"interest"),
-    task
+  "tasks" = list(
+    add_weight(train_task,"interest"),
+    train_task
   ),
-  learners =
+  "learners" =
     append(
       ge,
       list(
         "xgboost" = Dummy_lrn_custom,
-        "ranger" = 
+        "ranger" = lrn("regr.featureless") 
       ))
     ,
-  resamplings = list(
-    rsmp("cv",folds = n_folds),
-    rsmp("cv",folds = n_folds),
-    rsmp("cv",folds = n_folds),
-    rsmp("cv",folds = n_folds)
-  ),
-  paired = TRUE)
-
+  "resamplings" = list(
+  rsmp("cv",folds = 5)))[c(1,2,3,8)]
 
 ## benchmark
 
