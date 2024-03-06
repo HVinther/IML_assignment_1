@@ -32,7 +32,7 @@ lrn_list_ge<-list(
   lrn_gam,
   lrn_ensemble)
 
-combine_graphs_and_learners(
+ge<-combine_graphs_and_learners(
   list("num.impact"= 
          po_RecBeg_num %>>%
          po_RecEnd_rc %>>%
@@ -40,3 +40,26 @@ combine_graphs_and_learners(
          po("encodeimpact")),
   lrn_list_ge
   )
+
+## xgboost 
+
+## ranger
+
+n_folds <- 5
+
+design<-benchmark_grid(
+  tasks = list(
+    add_weight(task,"interest"),
+    add_weight(task,"interest"),
+    add_weight(task,"interest"),
+    task
+  ),
+  learners =
+    ge,
+  resamplings = list(
+    rsmp("cv",folds = n_folds),
+    rsmp("cv",folds = n_folds),
+    rsmp("cv",folds = n_folds),
+    rsmp("cv",folds = n_folds)
+  ),
+  paired = TRUE)
