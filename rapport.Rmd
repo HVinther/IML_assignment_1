@@ -415,6 +415,23 @@ readRDS("bw_train_comp_scor.rds") |>
         legend.position = "bottom")
 ```
 
+```{r}
+readRDS("bw_train_comp_aggr.rds")|> 
+  pivot_longer(cols = c("regr.mse","mse_inter"),
+               names_to = "measure")|>
+  ggplot()+
+    geom_hline(aes(yintercept = value,
+                   color = learner_id),
+                   linetype = "dashed",
+               linewidth = 0.3)+
+    geom_point(aes(x = time_train,
+                   y = value,
+                   color = learner_id),
+               size = 3)+
+    facet_wrap(~measure, scale = "free")+
+  theme(legend.position = "bottom")
+```
+
 
 ## Comparison
 =======
