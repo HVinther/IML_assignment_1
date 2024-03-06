@@ -41,7 +41,7 @@ Before settling on an encoding strategy a second issue has to be considered. The
 
 We suggest and investigate the following encoding strategies for these variables:
 
-A numerical encoding,imputing using lastest observed date and indicating censoring
+A numerical encoding,imputing using latest observed date and indicating censoring
 
 ```{r, eval = FALSE}
 # Interpretes RecordEnd as being right censored.
@@ -66,6 +66,15 @@ po_RecBeg_num<-po(
   ),
   id = "RecBeg_num"
 )
+```
+
+An alternative method would be to use the datefeatures encoding found in `mlr3`, as seen below.
+
+```{r, eval = FALSE}
+  po("missind") %>>%
+  po("select",
+       selector = selector_invert(selector_name("RecordEnd")))%>>%
+  po("datefeatures")
 ```
 
 
@@ -110,7 +119,7 @@ The vast majority of observations about $94.7\%$ have `ClaimAmount` equal to zer
 
 One problem with the latter weighting is that it depends on the response, thus it is more troublesome to include in 'mlr3' pipelines. To amend this we have created the function 'add_weight' which takes a Task or data.frame and outputs an object of similar class but with the specified weights. Thus the weighting will appear as a part of the task instead of a part of the learning pipeline. Further we might want to use both weights, for this we simple combine them by multiplication. Note the default of the function `add_weight` is to add both weightings. The implementations can be seen below or found in file extra_pipeops.R on the github repository.
 
-```{r}
+```{r, eval = FALSE}
 ## Frequency weight can be added using the add_weight function. The sigmoid function below
 ## is just a helper function for add_weight
 .sigmoid <- function(x,k = 12, location = 0.5){
