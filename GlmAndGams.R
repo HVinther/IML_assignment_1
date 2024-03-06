@@ -5,34 +5,56 @@ loadData()
 
 train_task <- as_task_regr(train,target = "ClaimAmount")
 
-graph_list<-list(
-  "full_adhoc" =
+date_encodings<-list(
+  "num" = 
+    po_RecBeg_num %>>%
+    po_RecEnd_rc,
+  "df" =  
+    po("missind") %>>%
+    po("select",
+       selector = selector_invert(selector_name("RecordEnd")))%>>%
+    po("datefeatures")
+)
+
+adhoc<-list(
+  "adhoc" = 
     po_SocCat_int%>>%
     po_VehAge_num%>>%
     po_VehPrice_int%>>%
-    po_RecBeg_num %>>%
-    po_RecEnd_rc %>>%
-    po("encode")%>>%
     po("scale"),
-  "dummy" =
-    po_RecBeg_num %>>%
-    po_RecEnd_rc %>>%
-    po("encode")%>>%
-    po("scale"),
-  "impact" =
-    po_RecBeg_num %>>%
-    po_RecEnd_rc %>>%
-    po("encodeimpact")%>>%
-    po("scale")
+  po("scale")
 )
 
-lrn_glmnet<-set_id(
-      lrn("regr.cv_glmnet"),
-      id = "cv_glmnet")
+factor <- list(
+  "dummy" = po("encode"),
+  "impact" = po("encodeimpact")
+)
 
-lrn_xboost<-
-  lrn("regr.xgboost") |>
-  set_id("xgboost")
+grp_bind<-function(first,second){
+  lapply(first, \(grp_f){
+    lapply(second,\(grf_s){
+      grp_f%>>%grf_s
+    })
+  }) |> 
+    unlist()
+}
+
+graph_list<-grp_bind(date_encodings,adhoc) |>
+  grp_bind(first = _,factor)
+
+lrn_cv_glmnet<-set_id(
+      lrn("regr.cv_glmnet"),
+      id = "cv.glmnet")
+
+lrn_glmnet<-
+  auto_tuner(
+    tuner = tnr("random_search"),
+    learner = lrn("regr.glmnet",
+                  s = to_tune(0,10)),
+    resampling = rsmp("cv",folds = 5),
+    term_evals = 20
+  )|>
+  set_id(id = "glmnet")
 
 lrn_gam<-
   lrn("regr.gam")|>
@@ -47,10 +69,6 @@ lrn_ensemble<-
     po("learner_cv",
        learner = lrn("regr.xgboost"),
        id = "xgboost",
-       resampling.folds = 2),
-    po("learner_cv",
-       learner = lrn("regr.kknn"),
-       id = "kknn",
        resampling.folds = 2))
     ) %>>%
   po("featureunion") %>>%
@@ -59,9 +77,15 @@ lrn_ensemble<-
   set_id("ensemble")
 
 
+# lrn_branched<-
+#   po("targetmutate",
+#      trafo = \(x){as.factor(sign(x))},
+#      new_task_type = "classif") %>>%
+#   lrn("classif.xgboost")
+
 learner_list<-list(
+  lrn_cv_glmnet,
   lrn_glmnet,
-  lrn_xboost,
   lrn_gam,
   lrn_ensemble
 )
@@ -81,29 +105,28 @@ bm<-benchmark(
         graph_list,
         learner_list),
       lrn("regr.featureless")),
-    resamplings = rsmp("cv",folds = 2)
+    resamplings = rsmp("cv",folds = 5)
   )
 )
 
 future::plan("sequential")
 
-bm$aggregate()
+scor<-bm$score(msrs(c("regr.mse","regr.mse_inter","time_train")))
 
+aggr<-bm$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))
 
-bm$aggregate(list(msr("regr.mse"),msr("time_train")))|>
+aggr <- aggr |>
   mutate(
-    encoding_id = as.factor(stringr::str_replace(learner_id,"_.*","")),
-    learner_id = as.factor(stringr::str_replace(learner_id,".*_","")))|>
-  ggplot()+
-  geom_hline(aes(yintercept = regr.mse, 
-                 color = learner_id,
-                 group = encoding_id),
-             linetype = "dashed",
-             linewidth = 1,
-             alpha = 0.8)+
-  geom_point(aes(x= log(time_train),
-                 y = regr.mse,
-                 color = learner_id,
-                 shape = encoding_id),
-             size = 5)+
-  facet_wrap(~task_id)
+    encoding = as.factor(stringr::str_replace(learner_id,"_.*","")),
+    learner = as.factor(stringr::str_replace(learner_id,".*_","")))
+
+scor <- scor |>
+  mutate(
+    encoding = as.factor(stringr::str_replace(learner_id,"_.*","")),
+    learner = as.factor(stringr::str_replace(learner_id,".*_","")))
+
+aggr <-aggr |> tibble() |> select(-resample_result)
+scor<-scor |> tibble() |> select(-c("uhash","task","resampling","prediction"))
+
+saveRDS(scor, "GnG_score_cv5.rds")
+saveRDS(aggr, "GnG_aggr_cv5.rds")
