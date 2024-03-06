@@ -125,6 +125,10 @@ train |>
 ```
 Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... bla.. reciprocal frequency
 
+## Custom Measure
+
+Since we 
+
 # Choosing Learners and Encoding
 
 When implementing our algorithm we decided to focus our attention on three different learners: Glmnet, Gradient boost and random forest. We also considered trying with a k-neareast neighbours learner, but we deemed that the dimension was too large
@@ -159,6 +163,22 @@ learner_BM <- benchmark_grid(
 ## Glmnet, Gam and ensemble learner
 
 In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one.
+
+Note, the naming of the encoding are slightly different as opposed to those described in section Encoding Stratgies. Here pipes between encodings are indicated by a ".", and the naming of different encodings are as follows,
+
+<dl class="dl-horizontal">
+<dt>df:</dt>
+<dd>Indicate missing. Remove RecordEnd. Encode with datefeatures</dd>
+<dt>num:</dt> 
+<dd>Indicate missing. Impute RecordEnd with last day of the year. Transform to numeric.</dd>
+<dt>adhoc:</dt>
+<dd>The remaing adhoc encoding described in ..</dd>
+<dt>dummy:</dt>
+<dd>dummy encoding of remaining factors</dd>
+<dt>impact:</dt>
+<dd>impact encoding of remaining factors</dd>
+</dl>
+
 
 As in other sections these learners are added to different combinations of encoding strategies and then benchmarked. The predictions are scored using the normal mean square error between predictions and truth (regr.mse), as well as out custom measure (mse_inter). The results from a 5-fold crossvalidation can be seen in the following plot.
 
