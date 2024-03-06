@@ -42,7 +42,20 @@ ge<-combine_graphs_and_learners(
   )
 
 ## xgboost 
+lrn_obj = lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
+              max_depth=to_tune(floor(seq(1,500,length.out=10))))
 
+Dummy_lrn_custom <- 
+  po_VehAge_num %>>% 
+  po_VehPrice_int %>>% 
+  po_SocCat_int %>>% 
+  po("encode") %>>% 
+  po_RecBeg_num %>>% 
+  po_RecEnd_rc %>>% 
+  po("scale") %>>% 
+  lrn_obj |> 
+  at_create() |>
+  set_id("Dummy_numeric")
 ## ranger
 
 
