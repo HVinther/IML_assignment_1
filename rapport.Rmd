@@ -363,7 +363,7 @@ There are a lot of hyperparameters to tune, and we select two of them. The first
 
 In order to make a choice of weighting and encoding, as described above, we use all 4 combinations of weighting (no weight, frequency, interest and both) and all 4 factors (dummy,target,numeric dummy and numeric target). The results are as follows:
 
-```{r}
+```{r, echo = FALSE}
 xg_learner = po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
               max_depth=to_tune(floor(seq(1,500,length.out=10)))) |> at_create()
 
@@ -384,7 +384,7 @@ We choose to do a random forest algorithm because we wanted to implement a tree 
 
 The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
 
-```{r}
+```{r, echo = FALSE}
 load("RforestBM5.RData")
 plot(rforest_BM5)
 
@@ -401,7 +401,7 @@ So from this plot we note that target encoding outperforms dummy encoding when u
 
 # Comparing learners
 
-```{r}
+```{r, echo = FALSE}
 readRDS("bw_train_comp_scor.rds") |> 
   pivot_longer(cols = c("regr.mse","mse_inter"),
                names_to = "measure")|>
@@ -415,7 +415,7 @@ readRDS("bw_train_comp_scor.rds") |>
         legend.position = "bottom")
 ```
 
-```{r}
+```{r, echo = FALSE}
 readRDS("bw_train_comp_aggr.rds")|> 
   pivot_longer(cols = c("regr.mse","mse_inter"),
                names_to = "measure")|>
