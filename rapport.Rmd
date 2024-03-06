@@ -293,15 +293,15 @@ Note, the naming of the encoding are slightly different as opposed to those desc
 
 <dl class="dl-horizontal">
 <dt>df:</dt>
-<dd>Indicate missing. Remove RecordEnd. Encode with datefeatures</dd>
+<dd>Indicate missing. Remove RecordEnd. Encode with datefeatures.</dd>
 <dt>num:</dt> 
 <dd>Indicate missing. Impute RecordEnd with last day of the year. Transform to numeric.</dd>
 <dt>adhoc:</dt>
-<dd>The remaing adhoc encoding described in ..</dd>
+<dd>The adhoc encodings described in section "Encoding of remaining covariates".</dd>
 <dt>dummy:</dt>
-<dd>dummy encoding of remaining factors</dd>
+<dd>dummy encoding of remaining factors.</dd>
 <dt>impact:</dt>
-<dd>impact encoding of remaining factors</dd>
+<dd>impact encoding of remaining factors.</dd>
 </dl>
 
 
@@ -398,8 +398,6 @@ So from this plot we note that target encoding outperforms dummy encoding when u
 
 # Comparing learners
 
-## Custom measure
-In order to evaluate which algorithm has best predictive performance, we evaluate the MSE only at the data where exposure=1. The idea being that standard MSE also awards good predictions at lower exposures, but we are not interested in having good predictive performance at these levels.
 
 ## Comparison
 =======
