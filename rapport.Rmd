@@ -364,7 +364,10 @@ There are a lot of hyperparameters to tune, and we select two of them. The first
 In order to make a choice of weighting and encoding, as described above, we use all 4 combinations of weighting (no weight, frequency, interest and both) and all 4 factors (dummy,target,numeric dummy and numeric target). The results are as follows:
 
 ```{r}
-bench_mark = readRDS("xgbench")
+xg_learner = po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
+              max_depth=to_tune(floor(seq(1,500,length.out=10)))) |> at_create()
+
+bench_mark = readRDS("xgbench 10-fold")
 plot(bench_mark)
 
 ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
