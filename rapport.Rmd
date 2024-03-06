@@ -262,7 +262,10 @@ aggr |>
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom")
 ```
-From this plot we note again that the interest weighting performs better in the eyes of the custom measure, where no weighting takes a lead when considering the traditional mse. The ensemble model seems to have slight edge in performance, but is quite close to that of the gam and the auto tuned glmnet. A stark difference in training time between the auto tuned glmnet and the remaing models is however to be noted, with the extra training time yielding no visible performance gain compared to gam and ensemble models.
+From this plot we note again that the interest weighting performs better in the eyes of the custom measure, where no weighting takes a lead when considering the traditional mse. The ensemble model seems to have slight edge in performance, but is quite close to that of the gam and the auto tuned glmnet. A stark difference in training time between the auto tuned glmnet and the remaing models is however to be noted, with the extra training time yielding no visible performance gain compared to gam and ensemble models. 
+
+A final thing to note is the choice of encodings, as the num.impact encoding seems to lead to the fastest training times of those with the best predictive performance. Thus the winner's of this experiment would be the ensemble and gam learners with the num.impact encoding.
+
 
 ## Gradient Boost
 
