@@ -95,7 +95,7 @@ future::plan("sequential")
 scor<-
   bm_comp$score(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 
   tibble() |> 
-  select(-c("uhash","task","resampling","prediction"))
+  select(-c("uhash","task","resampling","prediction","learner"))
 
 aggr<-
   bm_comp$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|> 

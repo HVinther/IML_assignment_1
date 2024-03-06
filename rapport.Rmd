@@ -401,6 +401,20 @@ So from this plot we note that target encoding outperforms dummy encoding when u
 
 # Comparing learners
 
+```{r}
+readRDS("bw_train_comp_scor.rds") |> 
+  pivot_longer(cols = c("regr.mse","mse_inter"),
+               names_to = "measure")|>
+  ggplot()+
+  geom_boxplot(
+    aes(y = value,
+        x = learner_id),
+    position = position_dodge2(preserve = "single"))+
+  facet_wrap( ~ measure,scale = "free")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+```
+
 
 ## Comparison
 =======
