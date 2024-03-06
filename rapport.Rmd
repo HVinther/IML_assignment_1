@@ -80,6 +80,47 @@ An alternative method would be to use the datefeatures encoding found in `mlr3`,
 
 ## Encoding of remaining covariates
 
+We present some adhoc encoding for a few of the remaining variables, mainly SocioCateg, VehPrice and VehAge as these have a natural ordering not captured by their default ordering.
+
+SocioCateg describes the "social category" of the individual claimant and ranges from CSP1 to CSP99 with trailing numbers indicating the levels, with a higher number indicating a higher status. We propose to strip away the letters and encode the remaining numbers as integers.
+
+VehAge describes the age of the vehicle and contains the levels 0 trough 5 and 6-7, 8-9 and finally 10+. We propose to encode these as 0 through 5, 6.5,8.5 and finally 10 all a numerics.
+
+Finally VehPrice indicates a pricing category for the price of the vehicle using letters, with "A" apparently indicating a cheaper vehicle while later letters indicate higher prices. We simply propose to encode this as an integer instead of a factor.
+
+The implementations are as seen below, but can also be found in the file extra_pipeops.R on the github repository.
+
+```{r, eval = FALSE}
+# Reencodes SocioCateg as an integer using the numbering provided in the factor
+po_SocCat_int<-po(
+  "mutate",
+  id = "SocioCateg_as_integer",
+  mutation = list(
+    SocioCateg = ~as.integer(substr(SocioCateg,4,5)))
+)
+
+# Reencodes VehPrice as integer using the default ordering
+po_VehPrice_int<-po(
+  "mutate",
+  id = "VehPrice_as_integer",
+  mutation = list(
+    VehPrice = ~as.integer(VehPrice))
+)
+
+# Reencodes VehAge as numeric using the "mean" of provided intervals
+po_VehAge_num<-po(
+  "mutate",
+  id = "VehAge_as_num",
+  mutation = list(
+    VehAge = ~dplyr::case_match(VehAge,
+                            "6-7" ~ 6.5,
+                            "8-9" ~ 8.5,
+                            "10+" ~ 10,
+                            .default = as.numeric(VehAge)))
+)
+```
+
+
 ## Weighting
 
 Some measures and learners allows the use of weights. We will explore to use cases of this features.
