@@ -73,13 +73,12 @@ po_RecBeg_num<-po(
 
 ## Weighting
 
-### By interest
-As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we ...
-$f:[0,1]\longrightarrow\mathbb{R}_{>=0}$
+Some measures and learners allows the use of weights. We will explore to use cases of this features.
 
-While weighting is normally done to fit models on imbalanced datasets, the same method should allow us to prioritize a precise fit on the ... of interest while hopefully still extracting some information from the remaining dataset.
+First of we might weight by interest. As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we might create some transformation function  $f:[0,1]\longrightarrow\mathbb{R}_{>=0}$ and evaluate in the Exposure to indicate our interest in this observation. This should allow us to prioritize a precise fit on the observations of high interest while hopefully still extracting some information from the remaining dataset. For the function $f$ we propose a sigmoid function of the form,
 
-$$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)} $$
+$$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)}.$$
+The parameters $k$ and $l$ represent a streching and shifting respectivily of the standard sigmoid function. Other functions as well as tuning of these parameters could be considered, but this is seen as out of scope of this project. We will adhoc set our parameters as follows, $k = 12$ and $l = 0.5$, yielding the following function.
 
 ```{r, echo=FALSE}
 x<- seq(from = 0,
