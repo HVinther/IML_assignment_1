@@ -45,6 +45,8 @@ ge<-combine_graphs_and_learners(
 
 ## ranger
 
+
+## design
 n_folds <- 5
 
 design<-benchmark_grid(
@@ -55,7 +57,13 @@ design<-benchmark_grid(
     task
   ),
   learners =
-    ge,
+    append(
+      ge,
+      list(
+        "xgboost" = ,
+        "ranger" = 
+      ))
+    ,
   resamplings = list(
     rsmp("cv",folds = n_folds),
     rsmp("cv",folds = n_folds),
@@ -63,3 +71,12 @@ design<-benchmark_grid(
     rsmp("cv",folds = n_folds)
   ),
   paired = TRUE)
+
+
+## benchmark
+
+future::plan("multisession")
+
+bw_comp<-benchmark(design)
+
+future::plan("sequential")
