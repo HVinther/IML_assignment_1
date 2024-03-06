@@ -9,6 +9,7 @@ train_task <- as_task_regr(train,target = "ClaimAmount")
 
 ## gam and ensemble learners
 lrn_gam<-
+  po_add_weighting%>>%
   po_RecBeg_num %>>%
   po_RecEnd_rc %>>%
   po("scale")%>>%
@@ -18,6 +19,7 @@ lrn_gam<-
   set_id("gam")
 
 lrn_ensemble<-
+  po_add_weighting%>>%
   po_RecBeg_num %>>%
   po_RecEnd_rc %>>%
   po("scale")%>>%
@@ -42,6 +44,7 @@ lrn_obj = lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
               max_depth=to_tune(floor(seq(1,500,length.out=10))))
 
 Dummy_lrn_custom <- 
+  po_add_weighting%>>%
   po_VehAge_num %>>% 
   po_VehPrice_int %>>% 
   po_SocCat_int %>>% 
@@ -72,17 +75,13 @@ Target_rforest_lrn_custom <-
 
 ## design
 design<-benchmark_grid(
-  tasks = list(
-    add_weight(train_task,"interest"),
-    train_task
-  ),
+  tasks = train_task,
   learners = list(
     lrn_gam,
     lrn_ensemble,
     Dummy_lrn_custom,
     Target_rforest_lrn_custom),
-  resamplings = list(
-    rsmp("cv",folds = 5)))[c(1,2,3,8)]
+  resamplings = rsmp("cv",folds = 5))
 
 ## benchmark
 
