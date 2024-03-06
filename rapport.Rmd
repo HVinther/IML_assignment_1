@@ -127,7 +127,44 @@ Thus the vast majority of observations have `ClaimAmount` equal to zero. bla... 
 
 ## Custom Measure
 
-Since we 
+Since we are only interested in accurately predicting given Exposure = 1, the normal mean squared error might lead to wrong conclusions about performance, when an algorithm is trained using the entire dataset. Thus we implement a measure that takes the mean square error only using the observation with Exposure = 1. Thus if we denote the set of row indices where exposure is 1 S, ie. $S=\{i \in \{1,..,n\}|Exposure_i =1\}$, and label the vector true responses $t$ and their predictions $p$, then
+
+$$\text{mse_inter}(t,p):=\left\{\begin{array}{cl}\frac{1}{|S|}\sum_{i\in S}(t_i-p_i)^2, & S\neq \emptyset\\ 0, &S= \emptyset\end{array} \right.$$
+
+The measure is implemented as seen in the code below. In the project it is defined in the extra_pipeops.R file. Note, the current implementation is a bit hacky, as it does not support splitting inside a train method call, ie. calls of the form '\$train(task, row_ids = split\$train)'. As this is not important for this project the bug has not been solved. It does however work with standard use in auto tuners and benchmarks, where it will be used. 
+
+```{r, eval = FALSE}
+# Measure to compare models on Exposure == 1 using mse
+MeasureRegrMSEinterest = R6::R6Class("MeasureRegrMSEinterest",
+  inherit = mlr3::MeasureRegr, # regression measure
+  public = list(
+    initialize = function() { # initialize class
+      super$initialize(
+        id = "mse_inter", # unique ID
+        packages = character(), # no package dependencies
+        properties = "requires_task", # requires a task
+        predict_type = "response", # measures response prediction
+        range = c(0, Inf), # results in values between (0, Inf)
+        minimize = TRUE # smaller values are better
+      )
+    }
+  ),
+
+  private = list(
+    # define score as private method
+    .score = function(prediction, task,...) {
+      # define loss
+      expo<-task$data()$Exposure[prediction$row_ids]
+      ind_of_interest <- (expo == 1)
+      mean((prediction$truth[ind_of_interest] - prediction$response[ind_of_interest])^2)
+      }
+  )
+)
+
+# adds the measure to the dictionary
+mlr_measures$add("regr.mse_inter",MeasureRegrMSEinterest)
+```
+
 
 # Choosing Learners and Encoding
 
