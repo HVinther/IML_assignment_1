@@ -236,9 +236,33 @@ readRDS("GnG_score_cv5.rds") |>
 ```
 In the comparison it is obvious that the choice of measure is indeed important for model selection. A much larger variance is in particular seen for regullar mse for the weighting with interest (ie. the sigmoid transformation of exposure) as opposed to the mse for just exposure = 1 (mse_inter), and this weighting seems way more favorable in the light of the latter measure. From the above plot either no weighting or interest weighting seems more favorable, perhaps with a slight edge for the weighted one. 
 
-For the encodings, using the numeric encoding of the dates as opposed to the default datefeatures also seems preferable. The effect of the remaining encodings are hard to distinguish in this plot. 
+For the encodings, using the numeric encoding of the dates as opposed to the default datefeatures encoding also seems preferable. The effect of the remaining encodings are hard to distinguish in this plot. 
 
-For the learners the main thing to note seems to be that tuning build into the cv_glmnet learner faires worse for this dataset compared to the auto tuning of the s parameter, even though this practice is discouraged in the help page for the learner. 
+For the learners the main thing to note seems to be that tuning build into the cv_glmnet learner fares worse for this dataset compared to the auto tuning of the s parameter, even though this practice is discouraged in the help page for the learner.
+
+In the following plot, the average performance is considered. Here the mse measures have been plotted against the time to train the model. These plots are made for each combination of measure and model and the gridded. Note the different scales.
+
+```{r, fig.width = 12, fig.height= 9, echo=FALSE}
+aggr<-readRDS("GnG_aggr_cv5.rds")
+aggr |> 
+  pivot_longer(cols = c("regr.mse","mse_inter"),
+               names_to = "measure")|>
+  filter(encoding != "regr.featureless")|>
+  ggplot()+
+    geom_hline(aes(yintercept = value,
+                   color = encoding,
+                   linetype = task_id),
+               linewidth = 0.3)+
+    geom_point(aes(x = time_train,
+                   y = value,
+                   color = encoding,
+                   shape = task_id),
+               size = 3)+
+    facet_grid(measure ~ learner, scale = "free")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+```
+From this plot we note again that the interest weighting performs better in the eyes of the custom measure, where no weighting takes a lead when considering the traditional mse. The ensemble model seems to have slight edge in performance, but is quite close to that of the gam and the auto tuned glmnet. A stark difference in training time between the auto tuned glmnet and the remaing models is however to be noted, with the extra training time yielding no visible performance gain compared to gam and ensemble models.
 
 ## Gradient Boost
 
