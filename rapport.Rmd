@@ -378,6 +378,42 @@ Where the first plot is a histogram of the mse at the different folds, and the s
 
 It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average mse, but the variance is comparable across all encoding strategies according to the boxplot. We can see both a lower mean and variance in the interest-weighting strategy, although the median is higher here. These values should be taken with a grain of salt since it is only based on 5 fold cv and has no chance of converging on representable values.
 
+forslag til plots med msr_inter
+
+```{r, echo = FALSE}
+bench_mark$score(msrs(c("regr.mse","regr.mse_inter")))|>
+pivot_longer(cols = c("regr.mse","mse_inter"),
+               names_to = "measure")|>
+  ggplot()+
+  geom_boxplot(
+    aes(y = value,
+        x = learner_id),
+    position = position_dodge2(preserve = "single"))+
+  facet_grid(measure ~ task_id, scales = "free_y")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+bench_mark$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|>
+  pivot_longer(cols = c("regr.mse","mse_inter"),names_to = "measure")|>
+ggplot()+
+  geom_hline(mapping = aes(yintercept = value, 
+                           color = learner_id),
+             linetype = "dashed")+
+  geom_point(mapping = aes(x=time_train, 
+                           y=value, 
+                           color= learner_id, 
+                           shape = task_id),
+             size = 3)+
+  xlab("time")+
+  ylab("Mean Squared Error")+
+  facet_wrap(~measure,scales = "free")+
+  theme(legend.position = "bottom",
+        legend.direction =  "horizontal",
+        legend.box = "vertical")
+
+```
+
 ## Random Forest
 
 We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
