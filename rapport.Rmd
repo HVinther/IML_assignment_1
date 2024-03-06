@@ -156,7 +156,11 @@ learner_BM <- benchmark_grid(
 ```
 
 
-## Glmnet
+## Glmnet, Gam and ensemble learner
+
+In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one.
+
+As in other sections these learners are added to different combinations of encoding strategies and then benchmarked. The predictions are scored using the normal mean square error between predictions and truth (regr.mse), as well as out custom measure (mse_inter). The results from a 5-fold crossvalidation can be seen in the following plot.
 
 ```{r, fig.width = 16, fig.height= 9, echo=FALSE}
 readRDS("GnG_score_cv5.rds") |> 
@@ -173,7 +177,11 @@ readRDS("GnG_score_cv5.rds") |>
         legend.position = "bottom")
 
 ```
+In the comparison it is obvious that the choice of measure is indeed important for model selection. A much larger variance is in particular seen for regullar mse for the weighting with interest (ie. the sigmoid transformation of exposure) as opposed to the mse for just exposure = 1 (mse_inter), and this weighting seems way more favorable in the light of the latter measure. From the above plot either no weighting or interest weighting seems more favorable, perhaps with a slight edge for the weighted one. 
 
+For the encodings, using the numeric encoding of the dates as opposed to the default datefeatures also seems preferable. The effect of the remaining encodings are hard to distinguish in this plot. 
+
+For the learners the main thing to note seems to be that tuning build into the cv_glmnet learner faires worse for this dataset compared to the auto tuning of the s parameter, even though this practice is discouraged in the help page for the learner. 
 
 ## Gradient Boost
 
