@@ -151,3 +151,23 @@ prediction_results<-
   mutate(learner = c("gam","ensemble","xgboost","ranger"))
 
 saveRDS(prediction_results,"prediction_results.rds")
+
+specific_predictions<-
+rbind(p_gam$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
+      p_ens$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
+      p_xgb$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
+      p_ran$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
+      p_gam$truth[c(11386, 12286, 2119, 2238, 27833, 27988)])|>
+  as_tibble()|>
+  rename("11386" = V1,
+         "12286" = V2,
+         "2119" = V3,
+         "2238" = V4,
+         "27833" = V5,
+         "27988" = V6)|>
+  mutate(learner = c("gam","ensemble","xgboost","ranger",NA),
+         type = c(rep("prediction",4),"truth"))|>
+  select("learner","type","11386","12286", "2119", "2238","27833","27988")
+
+saveRDS(specific_predictions,"specific_predictions.rds")
+

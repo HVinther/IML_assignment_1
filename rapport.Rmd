@@ -526,5 +526,7 @@ readRDS("prediction_results.rds") |>
 
 Here we might note, that while the gradient boosting model outperforms both the gam and ensemble, when predictions of the entire test set is considered, it performs worse than the gam on the measure of interest, which beats ensemble learner as well under this measure, even though it had the worst predictive performance when considering any exposure. The big winner in predictive performance both regardless of exposure restriction is as expected the random forrest, while still not being the slowest to train, this is however probably mostly a result of the hyperparameter tuning in the xgboost learner.
 
+
+
 # Ending notes
 
