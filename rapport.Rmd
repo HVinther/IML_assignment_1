@@ -393,7 +393,7 @@ pivot_longer(cols = c("regr.mse","mse_inter"),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
+```{r, echo = FALSE}
 bench_mark$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|>
   pivot_longer(cols = c("regr.mse","mse_inter"),names_to = "measure")|>
 ggplot()+
@@ -448,7 +448,7 @@ pivot_longer(cols = c("regr.mse","mse_inter"),
   facet_grid(measure ~ task_id, scales = "free_y")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-```{r}
+```{r, echo = FALSE}
 rforest_BM5$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|>
   pivot_longer(cols = c("regr.mse","mse_inter"),names_to = "measure")|>
 ggplot()+
@@ -471,6 +471,8 @@ ggplot()+
 
 
 # Comparing learners
+
+## Within the training set
 
 Before training the chosen learners on the full training set and evaluating them on the testing set, the best performing learner from each of the previous section are compared against each other. From the Glmnet, Gam and Ensemble section the interest weighted Gam, Ensemble and Xgboost learners with impact encoding is chosen, as these performed best under our measure of interest, while for the Random Forrest the adhoc encoding will be used as well.
 
@@ -508,6 +510,21 @@ readRDS("bw_train_comp_aggr.rds")|>
   theme(legend.position = "bottom")
 ```
 Overall it seems that the random forrest learner yields the best predictive performance, thus we would expect this to perform best, when trained on the entire training set and tested on the testing set.
+
+## On the testing set
+
+Having studied the four learners on training set, we are now ready to train them on the entire training set and test them on the testing set. The results of which can be seen in the table below. A ranking column has been added after each measure, these should be read as in sports, ie. first place, second place ect.
+
+```{r,echo = FALSE}
+readRDS("prediction_results.rds") |>
+  mutate(ppr_inter = rank(mse_inter),
+         ppr_mse = rank(regr.mse),
+         r_tt = rank(time_train))|>
+  select(c("learner","mse_inter","ppr_inter","regr.mse","ppr_mse","time_train","r_tt"))
+
+```
+
+Here we might note, that while the gradient boosting model outperforms both the gam and ensemble, when predictions of the entire test set is considered, it performs worse than the gam on the measure of interest, which beats ensemble learner as well under this measure, even though it had the worst predictive performance when considering any exposure. The big winner in predictive performance both regardless of exposure restriction is as expected the random forrest, while still not being the slowest to train, this is however probably mostly a result of the hyperparameter tuning in the xgboost learner.
 
 #
 
