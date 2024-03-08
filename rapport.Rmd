@@ -472,6 +472,8 @@ ggplot()+
 
 # Comparing learners
 
+Before training the chosen learners on the full training set and evaluating them on the testing set, the best performing learner from each of the previous section are compared against each other. From the Glmnet, Gam and Ensemble and Gradient Boosting sections the interest weighted Gam, Ensemble and Xgboost learners with impact encoding is chosen, as these performed best under our measure of interest, while for the Random Forrest the adhoc encoding will be used as well.
+
 ```{r, echo = FALSE}
 readRDS("bw_train_comp_scor.rds") |> 
   pivot_longer(cols = c("regr.mse","mse_inter"),
