@@ -172,16 +172,28 @@ rbind(p_gam$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
 
 saveRDS(specific_predictions,"specific_predictions.rds")
 
+
+
 what_if<-
+  rbind(
   test[c(11386, 12286, 2119, 2238, 27833, 27988),]|>
   mutate(Exposure = 1,
-         RecordEnd = max(na.omit(test$RecordEnd)))|>
+         RecordEnd = max(na.omit(test$RecordEnd))),
+  test[c(11386, 12286, 2119, 2238, 27833, 27988),]|>
+    mutate(Exposure = 1,
+           RecordEnd = max(na.omit(test$RecordEnd)),
+           ClaimInd = 1L)
+    )|>
   as_task_regr(target = "ClaimAmount",id = "what_if")
 
-what_if_pred<-rbind(lrn_gam$predict(what_if)$response,
+preds<-rbind(lrn_gam$predict(what_if)$response,
       lrn_ensemble$predict(what_if)$response,
       lrn_xgboost$predict(what_if)$response,
-      lrn_ranger$predict(what_if)$response)|>
+      lrn_ranger$predict(what_if)$response)
+
+what_if_pred<-rbind(
+  preds[1:4,1:6],
+  preds[1:4,7:12])|>
   as_tibble()|>
   rename("i11386" = V1,
          "i12286" = V2,
@@ -189,7 +201,8 @@ what_if_pred<-rbind(lrn_gam$predict(what_if)$response,
          "i2238" = V4,
          "i27833" = V5,
          "i27988" = V6)|>
-  mutate(learner = c("gam","ensemble","xgboost","ranger"))|>
-  select("learner","i11386","i12286", "i2119", "i2238","i27833","i27988")
+  mutate(learner = rep(c("gam","ensemble","xgboost","ranger"),times = 2),
+         ClaimInd = rep(0:1,each = 4))|>
+  select("learner","ClaimInd","i11386","i12286","i2119","i2238","i27833","i27988")
 
-saveRDS(what_if,"what_if.rds")
+saveRDS(what_if_pred,"what_if.rds")

@@ -528,7 +528,7 @@ Here we might note, that while the gradient boosting model outperforms both the 
 
 Now, in the table below we consider the different learners predictions for the specified indices on the test set, which all have zero as their true response. These indicies are 11386, 12286, 2119, 2238, 27833 and 27988. The mean squared error for these 6 observations can be seen ind the mse column.
 
-```{r}
+```{r},echo = = FALSE}
 readRDS("specific_predictions.rds")
 ```
 Now, the xgboost have by far the best predictive performance on the observations, however as seen in the call below, none of these observations have exposure equal to 1. Thus the performance ranking seems inline with the ones described in the earlier table.
@@ -536,7 +536,12 @@ Now, the xgboost have by far the best predictive performance on the observations
 ```{r}
 test$Exposure[c(11386, 12286, 2119, 2238, 27833, 27988)]
 ```
-Over all of the studied learners, random forrest seems to produce best performing algorithm.
+
+Now setting the exposure to 1 and changing RecordEnd appropriately for these observations, the 4 models can be set to predict for this "new" dataset
+```{r,echo = = FALSE}
+readRDS("what_if.rds")
+```
+
 
 # Discussion
 
