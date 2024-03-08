@@ -537,11 +537,13 @@ Now, the xgboost have by far the best predictive performance on the observations
 test$Exposure[c(11386, 12286, 2119, 2238, 27833, 27988)]
 ```
 
-Now setting the exposure to 1 and changing RecordEnd appropriately for these observations, the 4 models can be set to predict for this "new" dataset
-```{r,echo = = FALSE}
+Now as a test we will create a new data set from these 6 observations. First we will set Exposure to 1 and change RecordEnd appropriately. A copy of this will be added where the claim indicator have been changed as well. The resulting predictions can be seen in the table below.
+
+```{r,echo = FALSE}
 readRDS("what_if.rds")
 ```
 
+Now a bit worryingly the models does not capture that ClaimInd = 0 correlates completely with a non-positive claim amount, while xgboost does seem to be closest to capturing this, the gam and ensemble models are the worst in this regard. The xgboost does however generally predict a lot lower compared to the other models, which are bit more similar in their predictions particular when ClaimInd = 1, at least for these observations. 
 
 # Discussion
 
