@@ -140,10 +140,10 @@ p_xgb<-lrn_xgboost$predict(test_task)
 p_ran<-lrn_ranger$predict(test_task)
 
 res<-do.call(rbind,
-        list(p_gam$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
-             p_ens$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
-             p_xgb$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
-             p_ran$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task)))
+        list(p_gam$score(msrs(c("regr.mse","regr.mse_inter","time_train")), task = test_task,learner = lrn_gam),
+             p_ens$score(msrs(c("regr.mse","regr.mse_inter","time_train")), task = test_task,learner = lrn_ensemble),
+             p_xgb$score(msrs(c("regr.mse","regr.mse_inter","time_train")), task = test_task,learner = lrn_xgboost),
+             p_ran$score(msrs(c("regr.mse","regr.mse_inter","time_train")), task = test_task,learner = lrn_ranger)))
 
 prediction_results<-
   res |> 
