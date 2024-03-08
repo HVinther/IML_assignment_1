@@ -159,15 +159,16 @@ rbind(p_gam$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
       p_ran$response[c(11386, 12286, 2119, 2238, 27833, 27988)],
       p_gam$truth[c(11386, 12286, 2119, 2238, 27833, 27988)])|>
   as_tibble()|>
-  rename("11386" = V1,
-         "12286" = V2,
-         "2119" = V3,
-         "2238" = V4,
-         "27833" = V5,
-         "27988" = V6)|>
+  rename("i11386" = V1,
+         "i12286" = V2,
+         "i2119" = V3,
+         "i2238" = V4,
+         "i27833" = V5,
+         "i27988" = V6)|>
   mutate(learner = c("gam","ensemble","xgboost","ranger",NA),
          type = c(rep("prediction",4),"truth"))|>
-  select("learner","type","11386","12286", "2119", "2238","27833","27988")
+  select("learner","type","i11386","i12286", "i2119", "i2238","i27833","i27988")|>
+  mutate(mse = i11386^2/6+i12286^2/6+i2119^2/6+i2238^2/6+i27833^2/6+i27988^2/6)
 
 saveRDS(specific_predictions,"specific_predictions.rds")
 

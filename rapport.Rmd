@@ -526,7 +526,17 @@ readRDS("prediction_results.rds") |>
 
 Here we might note, that while the gradient boosting model outperforms both the gam and ensemble, when predictions of the entire test set is considered, it performs worse than the gam on the measure of interest, which beats ensemble learner as well under this measure, even though it had the worst predictive performance when considering any exposure. The big winner in predictive performance both regardless of exposure restriction is as expected the random forrest, while still not being the slowest to train, this is however probably mostly a result of the hyperparameter tuning in the xgboost learner.
 
+Now, in the table below we consider the different learners predictions for the specified indices on the test set, which all have zero as their true response. These indicies are 11386, 12286, 2119, 2238, 27833 and 27988. The mean squared error for these 6 observations can be seen ind the mse column.
 
+```{r}
+readRDS("specific_predictions.rds")
+```
+Now, the xgboost have by far the best predictive performance on the observations, however as seen in the call below, none of these observations have exposure equal to 1. Thus the performance ranking seems inline with the ones described in the earlier table.
 
-# Ending notes
+```{r}
+test$Exposure[c(11386, 12286, 2119, 2238, 27833, 27988)]
+```
+Over all of the studied learners, random forrest seems to produce best performing algorithm.
+
+# Discussion
 
