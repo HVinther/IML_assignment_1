@@ -43,25 +43,33 @@ lrn_ensemble<-
 lrn_obj = lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
               max_depth=to_tune(floor(seq(1,500,length.out=10))))
 
-Dummy_lrn_custom <- 
+# xboost_mse <- 
+#   po_add_weighting%>>%
+#   po_VehAge_num %>>% 
+#   po_VehPrice_int %>>% 
+#   po_SocCat_int %>>% 
+#   po("encode") %>>% 
+#   po_RecBeg_num %>>% 
+#   po_RecEnd_rc %>>% 
+#   po("scale") %>>% 
+#   lrn_obj |> 
+#   at_create() |>
+#   set_id("wi.num.adhoc.dummy_xgboost")
+
+lrn_xgboost <- 
   po_add_weighting%>>%
-  po_VehAge_num %>>% 
-  po_VehPrice_int %>>% 
-  po_SocCat_int %>>% 
-  po("encode") %>>% 
   po_RecBeg_num %>>% 
   po_RecEnd_rc %>>% 
+  po("encodeimpact") %>>% 
   po("scale") %>>% 
   lrn_obj |> 
   at_create() |>
   set_id("xgboost")
+
 ## ranger
 
-Rforest_lrn <- 
-  lrn("regr.ranger",
-      min.node.size = to_tune(1, 50))
-
-Target_rforest_lrn_custom <- 
+lrn_ranger <- 
+  po_add_weighting%>>%
   po_VehAge_num %>>% 
   po_VehPrice_int %>>% 
   po_SocCat_int %>>% 
@@ -72,6 +80,18 @@ Target_rforest_lrn_custom <-
   lrn("regr.ranger") |> 
   as_learner() |>
   set_id("ranger")
+# 
+# ranger_<- 
+#   po_VehAge_num %>>% 
+#   po_VehPrice_int %>>% 
+#   po_SocCat_int %>>% 
+#   po("encodeimpact") %>>% 
+#   po_RecBeg_num %>>% 
+#   po_RecEnd_rc %>>% 
+#   po("scale") %>>% 
+#   lrn("regr.ranger") |> 
+#   as_learner() |>
+#   set_id("w0.num.adhoc.impact_ranger")
 
 ## design
 design<-benchmark_grid(
@@ -79,8 +99,8 @@ design<-benchmark_grid(
   learners = list(
     lrn_gam,
     lrn_ensemble,
-    Dummy_lrn_custom,
-    Target_rforest_lrn_custom),
+    lrn_xgboost,
+    lrn_ranger),
   resamplings = rsmp("cv",folds = 5))
 
 ## benchmark
@@ -104,3 +124,19 @@ aggr<-
 
 saveRDS(scor,"bw_train_comp_scor.rds")
 saveRDS(aggr,"bw_train_comp_aggr.rds")
+
+# train on train and test on test -----------------------------------
+
+test_task <- as_task_regr(test,target = "ClaimAmount")
+
+lrn_gam$train(train_task)
+lrn_ensemble$train(train_task)
+lrn_xgboost$train(train_task)
+lrn_ranger$train(train_task)
+
+p_gam<-lrn_gam$predict(test_task)
+p_ens<-lrn_ensemble$predict(test_task)
+p_xgb<-lrn_xbgoost$predict(test_task)
+p_ran<-lrn_ranger$predict(test_task)
+
+p_gam$score(msr("regr.mse"))

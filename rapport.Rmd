@@ -472,7 +472,9 @@ ggplot()+
 
 # Comparing learners
 
-Before training the chosen learners on the full training set and evaluating them on the testing set, the best performing learner from each of the previous section are compared against each other. From the Glmnet, Gam and Ensemble and Gradient Boosting sections the interest weighted Gam, Ensemble and Xgboost learners with impact encoding is chosen, as these performed best under our measure of interest, while for the Random Forrest the adhoc encoding will be used as well.
+Before training the chosen learners on the full training set and evaluating them on the testing set, the best performing learner from each of the previous section are compared against each other. From the Glmnet, Gam and Ensemble section the interest weighted Gam, Ensemble and Xgboost learners with impact encoding is chosen, as these performed best under our measure of interest, while for the Random Forrest the adhoc encoding will be used as well.
+
+The four learners are compared using a 10 fold cross validation, and the results can be seen in the following plots.
 
 ```{r, echo = FALSE}
 readRDS("bw_train_comp_scor.rds") |> 
@@ -487,6 +489,7 @@ readRDS("bw_train_comp_scor.rds") |>
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "bottom")
 ```
+
 
 ```{r, echo = FALSE}
 readRDS("bw_train_comp_aggr.rds")|> 
@@ -504,7 +507,9 @@ readRDS("bw_train_comp_aggr.rds")|>
     facet_wrap(~measure, scale = "free")+
   theme(legend.position = "bottom")
 ```
+Overall it seems that the random forrest learner yields the best predictive performance, thus we would expect this to perform best, when trained on the entire training set and tested on the testing set.
 
+#
 
 ## Comparison
 =======
