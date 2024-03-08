@@ -526,26 +526,5 @@ readRDS("prediction_results.rds") |>
 
 Here we might note, that while the gradient boosting model outperforms both the gam and ensemble, when predictions of the entire test set is considered, it performs worse than the gam on the measure of interest, which beats ensemble learner as well under this measure, even though it had the worst predictive performance when considering any exposure. The big winner in predictive performance both regardless of exposure restriction is as expected the random forrest, while still not being the slowest to train, this is however probably mostly a result of the hyperparameter tuning in the xgboost learner.
 
-#
-
-## Comparison
-=======
-```{r}
-rforest_BM52 <- rforest_BM5$clone()
-rforest_BM52$filter(learner_ids = list("dmy_Rfor","dmy_Rfor_cus","Trgt_Rfor","Trgt_Rfor_cus"))
-```
-
-```{r}
-plot(rforest_BM52)
-
-ggplot(rforest_BM52$aggregate(list(msr("regr.mse"),
-                                 msr("time_train"))))+
-  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
-  geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
-             linetype = "dashed")+
-  xlab("time")+
-  ylab("Mean Squared Error")
-```
-
-
+# Ending notes
 
