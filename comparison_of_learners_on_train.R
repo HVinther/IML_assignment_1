@@ -136,7 +136,18 @@ lrn_ranger$train(train_task)
 
 p_gam<-lrn_gam$predict(test_task)
 p_ens<-lrn_ensemble$predict(test_task)
-p_xgb<-lrn_xbgoost$predict(test_task)
+p_xgb<-lrn_xgboost$predict(test_task)
 p_ran<-lrn_ranger$predict(test_task)
 
-p_gam$score(msr("regr.mse"))
+res<-do.call(rbind,
+        list(p_gam$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
+             p_ens$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
+             p_xgb$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task),
+             p_ran$score(msrs(c("regr.mse","regr.mse_inter")), task = test_task)))
+
+prediction_results<-
+  res |> 
+  as.data.frame() |>
+  mutate(learner = c("gam","ensemble","xgboost","ranger"))
+
+saveRDS(prediction_results,"prediction_results.rds")
