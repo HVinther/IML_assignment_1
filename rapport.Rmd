@@ -367,7 +367,7 @@ In order to make a choice of weighting and encoding, as described above, we use 
 xg_learner = po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
               max_depth=to_tune(floor(seq(1,500,length.out=10)))) |> at_create()
 
-#bench_mark = readRDS("xgbench 10-fold")
+bench_mark = readRDS("xgbench 10-fold")
 #plot(bench_mark)
 
 #ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
@@ -414,6 +414,8 @@ Where the first plot is a histogram of the MSE at the different folds, and the s
 It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average MSE, but the variance is comparable across all encoding strategies according to the boxplot. We can see both a lower mean and variance in the interest-weighting strategy, although the median is higher here. These values should be taken with a grain of salt since it is only based on 5 fold cv and has no chance of converging on representable values.
 
 Across both MSE measures, it is clear that interest weighting is preferable, but there is no clear choice of encoder. For the MSE_interest, direct target encoding gives better performance, but for regular MSE numeric encoding scores lower (better). Since direct target is good in both cases, and we are most interested in the MSE as measured by MSE_interest, we choose the direct target encoding.
+
+5-fold cross validation tells us that we ought to have a max_depth of around 300 and use the gbtree booster.
 
 
 
@@ -516,7 +518,7 @@ Overall it seems that the random forrest learner yields the best predictive perf
 
 ## On the testing set
 
-Having studied the four learners on training set, we are now ready to train them on the entire training set and test them on the testing set. The results of which can be seen in the table below. A ranking column has been added after each measure, these should be read as in sports, ie. first place, second place ect.
+Having studied the four learners on training set, we are now ready to train them on the entire training set and test them on the testing set. The results of which can be seen in the table below. A ranking column has been added after each measure, these should be read as in sports, ie. first place, second place etc.
 
 ```{r,echo = FALSE}
 readRDS("prediction_results.rds") |>
@@ -529,9 +531,9 @@ readRDS("prediction_results.rds") |>
 
 Here we might note, that while the gradient boosting model outperforms both the gam and ensemble, when predictions of the entire test set is considered, it performs worse than the gam on the measure of interest, which beats ensemble learner as well under this measure, even though it had the worst predictive performance when considering any exposure. The big winner in predictive performance both regardless of exposure restriction is as expected the random forrest, while still not being the slowest to train, this is however probably mostly a result of the hyperparameter tuning in the xgboost learner.
 
-Now, in the table below we consider the different learners predictions for the specified indices on the test set, which all have zero as their true response. These indicies are 11386, 12286, 2119, 2238, 27833 and 27988. The mean squared error for these 6 observations can be seen ind the mse column.
+Now, in the table below we consider the different learners predictions for the specified indices on the test set, which all have zero as their true response. These indicies are 11386, 12286, 2119, 2238, 27833 and 27988. They all have not made any insurance claim in 2004, and have a claim amount of 0. The mean squared error for these 6 observations can be seen ind the mse column.
 
-```{r},echo = = FALSE}
+```{r},echo = FALSE}
 readRDS("specific_predictions.rds")
 ```
 Now, the xgboost have by far the best predictive performance on the observations, however as seen in the call below, none of these observations have exposure equal to 1. Thus the performance ranking seems inline with the ones described in the earlier table.
@@ -540,13 +542,20 @@ Now, the xgboost have by far the best predictive performance on the observations
 test$Exposure[c(11386, 12286, 2119, 2238, 27833, 27988)]
 ```
 
-Now as a test we will create a new data set from these 6 observations. First we will set Exposure to 1 and change RecordEnd appropriately. A copy of this will be added where the claim indicator have been changed as well. The resulting predictions can be seen in the table below.
+It could be interesting to try predicting the Claimamount for these individuals, in the case that they did make a claim. In the same prediction, we see how well the different algorithms capture the fact that there is claim being made. First we will set Exposure to 1 and change RecordEnd appropriately. A copy of this will be added where the claim indicator have been changed as well. The resulting predictions can be seen in the figure below.
 
 ```{r,echo = FALSE}
-readRDS("what_if.rds")
+what<- readRDS("what_if.rds")
+what
+for_plot <- pivot_longer(what,cols=3:8,names_to="Individual",values_to="Predicted_Claimamount")
+for_plot$ClaimInd<-for_plot$ClaimInd %>%as_factor()
+ggplot(for_plot)+geom_point(mapping=aes(x=learner,y=Predicted_Claimamount,shape=ClaimInd,color=Individual))+ylab("Predicted claim amount")
 ```
 
-Now a bit worryingly the models does not capture that ClaimInd = 0 correlates completely with a non-positive claim amount, while xgboost does seem to be closest to capturing this, the gam and ensemble models are the worst in this regard. The xgboost does however generally predict a lot lower compared to the other models, which are bit more similar in their predictions particular when ClaimInd = 1, at least for these observations. 
+Now a bit worryingly the models do not capture that ClaimInd = 0 correlates completely with a non-positive claim amount, while xgboost does seem to be closest to capturing this, the gam and ensemble models are the worst in this regard. The xgboost does however generally predict a lot lower compared to the other models, which are bit more similar in their predictions particular when ClaimInd = 1, at least for these observations.
 
 # Discussion
 
+We have seen that many different approaches to learning for insurance data can be viable. Particularly we can see that weighting can lead to lower prediction errors, and the choice of weighting has a big influence on the fitted model, with different performance depending on the model. Similarly the way data is encoded has some impact, but not nearly as significant as weighting, but here it can also be hard to evaluate a priori which type of encoding is more appropriate. Additionally it is difficult (impossible) to learn why some combination of encodings, learners and weights give the performance they do.
+
+Based on MSE, we found that random forest has the best predictive performance. It is however quite a bit slower than the glmnet and gam learners, and when we look at individual predictions it seems like they are in the same ballpark. XGBoost, on the other hand, better reflects the structure in the data because it accurately captures that people don't get a payout if they don't make a claim. The reason why it captures this might just be because it is somehow trained to give lower predictions.
