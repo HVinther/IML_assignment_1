@@ -367,18 +367,13 @@ In order to make a choice of weighting and encoding, as described above, we use 
 xg_learner = po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn("regr.xgboost",booster=to_tune(c("gbtree", "gblinear", "dart")),
               max_depth=to_tune(floor(seq(1,500,length.out=10)))) |> at_create()
 
-bench_mark = readRDS("xgbench 10-fold")
-plot(bench_mark)
+#bench_mark = readRDS("xgbench 10-fold")
+#plot(bench_mark)
 
-ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
-  geom_point(mapping=aes(x=time_train,y=regr.mse,colour=learner_id,shape=task_id))+
-  geom_hline(mapping=aes(yintercept=regr.mse,colour=learner_id,linetype=task_id))
+#ggplot(bench_mark$aggregate(list(msr("time_train"),msr("regr.mse"))))+
+#  geom_point(mapping=aes(x=time_train,y=regr.mse,colour=learner_id,shape=task_id))+
+#  geom_hline(mapping=aes(yintercept=regr.mse,colour=learner_id,linetype=task_id))
 ```
-Where the first plot is a histogram of the mse at the different folds, and the second plot illustrates the average mse for the different combinations, with training time in seconds.
-
-It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average mse, but the variance is comparable across all encoding strategies according to the boxplot. We can see both a lower mean and variance in the interest-weighting strategy, although the median is higher here. These values should be taken with a grain of salt since it is only based on 5 fold cv and has no chance of converging on representable values.
-
-forslag til plots med msr_inter
 
 ```{r, echo = FALSE}
 bench_mark$score(msrs(c("regr.mse","regr.mse_inter")))|>
@@ -413,6 +408,14 @@ ggplot()+
         legend.box = "vertical")
 
 ```
+
+Where the first plot is a histogram of the MSE at the different folds, and the second plot illustrates the average mse for the different combinations, with training time in seconds.
+
+It can be seen that dummy encoding generally gives higher run-time. More importantly, dummy also tends to result in lower average MSE, but the variance is comparable across all encoding strategies according to the boxplot. We can see both a lower mean and variance in the interest-weighting strategy, although the median is higher here. These values should be taken with a grain of salt since it is only based on 5 fold cv and has no chance of converging on representable values.
+
+Across both MSE measures, it is clear that interest weighting is preferable, but there is no clear choice of encoder. For the MSE_interest, direct target encoding gives better performance, but for regular MSE numeric encoding scores lower (better). Since direct target is good in both cases, and we are most interested in the MSE as measured by MSE_interest, we choose the direct target encoding.
+
+
 
 ## Random Forest
 
