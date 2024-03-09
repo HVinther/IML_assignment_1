@@ -421,25 +421,15 @@ Across both MSE measures, it is clear that interest weighting is preferable, but
 
 ## Random Forest
 
+
 We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
 
 The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
 
 ```{r, echo = FALSE}
 load("RforestBM5.RData")
-plot(rforest_BM5)
-
-ggplot(rforest_BM5$aggregate(list(msr("regr.mse"),
-                                 msr("time_train"))))+
-  geom_point(mapping = aes(x=time_train, y=regr.mse, color= learner_id, shape = task_id))+
-  geom_hline(mapping = aes(yintercept = regr.mse, color = learner_id),
-             linetype = "dashed")+
-  xlab("time")+
-  ylab("Mean Squared Error")
+rforest_BM5$filter(learner_ids = list("dmy_Rfor","dmy_Rfor_cus","Trgt_Rfor","Trgt_Rfor_cus"))
 ```
-So from this plot we note that target encoding outperforms dummy encoding when using it on our random forest learner. Furthermore we note that our own encodings also performs better than without, but the benefit is smaller for when using it with target encoding. It should also be noted that our encodings were computationally faster with dummy encoding but slower for target encoding. But overall we would conclude that our custom target encoding is the best performing encoding when using a random forest learner.
-
-Forslag til alternativt boxplot, bemærk vægtning med interest er bedre
 
 ```{r, echo = FALSE}
 rforest_BM5$score(msrs(c("regr.mse","regr.mse_inter")))|>
@@ -448,11 +438,15 @@ pivot_longer(cols = c("regr.mse","mse_inter"),
   ggplot()+
   geom_boxplot(
     aes(y = value,
-        x = learner_id),
+        x = learner_id,
+        fill = learner_id),
     position = position_dodge2(preserve = "single"))+
   facet_grid(measure ~ task_id, scales = "free_y")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+We again see the same pattern as we did before, where the variance is dependent on which measure we use to score. We firstly note that the values we observe with the MSE is smaller than with the MSE_inter, which makes comparing the two measures a little more complicated. But in general the pattern is that the variance for the MSE_inter is smaller for learners trained on the tasks with frequency weighting and interest weighting, and the regular MSE har smaller variance for the learners trained on the task with both weighting implementations. Comparing the variance on the unweighted does seems to indicate smaller variance for MSE_inter, but our cummy encoding seems to have smaller variance for the MSE.
+
+Furthermore from our boxplot we can see a few more things. Firstly we remark that the performance on the unweighted task scores significantly better when we using the regular MSE. Which of the other learners performs the best we can't really tell because of the difference in the scales, to get a better understanding of the performances we plot the score measures against how long they took to run. 
 ```{r, echo = FALSE}
 rforest_BM5$aggregate(msrs(c("regr.mse","regr.mse_inter","time_train")))|>
   pivot_longer(cols = c("regr.mse","mse_inter"),names_to = "measure")|>
@@ -471,9 +465,10 @@ ggplot()+
   theme(legend.position = "bottom",
         legend.direction =  "horizontal",
         legend.box = "vertical")
-
 ```
+We note that we still have different scales but these scales are much more comparable. The first thing we notice is that in general that the dummy encoding is slowest and the worst performing. Furthermore it seems that our own encodings seems to have a positive impact when using the dummy encoding, where our own custom dummy encoding improves both the performance and the computational time.
 
+But what is clear from this plot is that it is target encoding of some kind which is the best ranger learner. We first note that our own encodings doesn't seem to have that big of impact on the performance of the random forest learner, but the important thing for performance is how we have weighted our training task. THe computaion time for the target encoding implementations are very similar, with only target encoding usually being slightly faster, but this difference is so small that it is not significant when choosing which implementation we deem the best. When looking at the MSE_inter plot we have a clear best option being our numeric target encoding, but we see that it's score it still higher than most of the scores we get when usign MSE. Other things to note is that the by far second best option is just pure target encoding on frequency weighting, and then the target encoders on the interest weighting task is also clearly the second best, but the scores of the two encodings are near identical. When we look at the performance on the regular MSE we have four encodings as the best performing. The worst of these is target encoding on the interest weighted training task, then it's the numeric target encoding on the untrained traning task. But the two best are also almost the same, and these are numeric target encoding on the interest weighted training task and the target encoding on the unweighted training task. So when considering the performance across both measure and computaional time we conclude that the numeric target encoding on the interest weighted training task is the best of our random forest learners.
 
 # Comparing learners
 
