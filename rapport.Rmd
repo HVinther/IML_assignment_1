@@ -128,7 +128,7 @@ Some measures and learners allows the use of weights. We will explore to use cas
 First of we might weight by interest. As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we might create some transformation function  $f:[0,1]\longrightarrow\mathbb{R}_{>=0}$ and evaluate in the Exposure to indicate our interest in this observation. This should allow us to prioritize a precise fit on the observations of high interest while hopefully still extracting some information from the remaining dataset. For the function $f$ we propose a sigmoid function of the form,
 
 $$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)}.$$
-The parameters $k$ and $l$ represent a streching and shifting respectivily of the standard sigmoid function. Other functions as well as tuning of these parameters could be considered, but this is seen as out of scope of this project. We will adhoc set our parameters as follows, $k = 12$ and $l = 0.5$, yielding the following function.
+The parameters $k$ and $l$ represent a stretching and shifting respectively of the standard sigmoid function. Other functions as well as tuning of these parameters could be considered, but this is seen as out of scope of this project. We will adhoc set our parameters as follows, $k = 12$ and $l = 0.5$, yielding the following function.
 
 ```{r, echo=FALSE}
 x<- seq(from = 0,
@@ -289,7 +289,7 @@ learner_BM <- benchmark_grid(
 
 In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one. The definition of the learners as well as the benchmarking can be found in the GlmAndGams.R file in the github repository.
 
-Note, the naming of the encoding are slightly different as opposed to those described in section Encoding Stratgies. Here pipes between encodings are indicated by a ".", and the naming of different encodings are as follows,
+Note, the naming of the encoding are slightly different as opposed to those described in section Encoding Strategies. Here pipes between encodings are indicated by a ".", and the naming of different encodings are as follows,
 
 <dl class="dl-horizontal">
 <dt>df:</dt>
@@ -421,7 +421,6 @@ Across both MSE measures, it is clear that interest weighting is preferable, but
 
 ## Random Forest
 
-
 We choose to do a random forest algorithm because we wanted to implement a tree based method. Since we are interested in the predictive performance of our models we chose to do a random forest implementation since it should have better performance than a decision tree, and should have lower variance than bagging.
 
 The random forest implementation has some well-performing standard hyper-parameters, so we deemed it not necessary to tune the hyper parameters. 
@@ -444,7 +443,7 @@ pivot_longer(cols = c("regr.mse","mse_inter"),
   facet_grid(measure ~ task_id, scales = "free_y")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-We again see the same pattern as we did before, where the variance is dependent on which measure we use to score. We firstly note that the values we observe with the MSE is smaller than with the MSE_inter, which makes comparing the two measures a little more complicated. But in general the pattern is that the variance for the MSE_inter is smaller for learners trained on the tasks with frequency weighting and interest weighting, and the regular MSE har smaller variance for the learners trained on the task with both weighting implementations. Comparing the variance on the unweighted does seems to indicate smaller variance for MSE_inter, but our cummy encoding seems to have smaller variance for the MSE.
+We again see the same pattern as we did before, where the variance is dependent on which measure we use to score. We firstly note that the values we observe with the MSE is smaller than with the MSE_inter, which makes comparing the two measures a little more complicated. But in general the pattern is that the variance for the MSE_inter is smaller for learners trained on the tasks with frequency weighting and interest weighting, and the regular MSE har smaller variance for the learners trained on the task with both weighting implementations. Comparing the variance on the unweighted does seems to indicate smaller variance for MSE_inter, but our dummy encoding seems to have smaller variance for the MSE.
 
 Furthermore from our boxplot we can see a few more things. Firstly we remark that the performance on the unweighted task scores significantly better when we using the regular MSE. Which of the other learners performs the best we can't really tell because of the difference in the scales, to get a better understanding of the performances we plot the score measures against how long they took to run. 
 ```{r, echo = FALSE}
