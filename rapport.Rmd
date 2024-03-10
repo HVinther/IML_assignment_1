@@ -19,7 +19,7 @@ loadData()
 # Introduction
 
 In this project we use different machinelearning models to predict the claim amount for individual customers of an insurance company. Particularly, we are interested in predicting the claim amount for customers who have had insurance for at least a whole year (i.e exposure=1). Aside from choosing suitable factor encodings and models, we are interested in optimizing our choices such that the predictions are best at exposure=1. To this end, we employ weightings and custom measures (see the following paragraphs).
-can be found on github at https://github.com/HVinther/IML_assignment_1
+The code for this project can be found on github at https://github.com/HVinther/IML_assignment_1
 
 # Data exploration, encoding and weighting
 
@@ -41,7 +41,7 @@ Before settling on an encoding strategy a second issue has to be considered. The
 
 We suggest and investigate the following encoding strategies for these variables:
 
-A numerical encoding,imputing using latest observed date and indicating censoring
+A numerical encoding, imputing using latest observed date and indicating censoring
 
 ```{r, eval = FALSE}
 # Interpretes RecordEnd as being right censored.
@@ -84,7 +84,7 @@ We present some adhoc encoding for a few of the remaining variables, mainly Soci
 
 SocioCateg describes the "social category" of the individual claimant and ranges from CSP1 to CSP99 with trailing numbers indicating the levels, with a higher number indicating a higher status. We propose to strip away the letters and encode the remaining numbers as integers.
 
-VehAge describes the age of the vehicle and contains the levels 0 trough 5 and 6-7, 8-9 and finally 10+. We propose to encode these as 0 through 5, 6.5,8.5 and finally 10 all a numerics.
+VehAge describes the age of the vehicle and contains the levels 0 trough 5 and 6-7, 8-9 and finally 10+. We propose to encode these as 0 through 5, 6.5,8.5 and finally 10, all as numerics.
 
 Finally VehPrice indicates a pricing category for the price of the vehicle using letters, with "A" apparently indicating a cheaper vehicle while later letters indicate higher prices. We simply propose to encode this as an integer instead of a factor.
 
@@ -123,12 +123,12 @@ po_VehAge_num<-po(
 
 ## Weighting
 
-Some measures and learners allows the use of weights. We will explore to use cases of this features.
+Some measures and learners allows the use of weights. We will explore two use cases of this features.
 
-First of we might weight by interest. As where are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we might create some transformation function  $f:[0,1]\longrightarrow\mathbb{R}_{>=0}$ and evaluate in the Exposure to indicate our interest in this observation. This should allow us to prioritize a precise fit on the observations of high interest while hopefully still extracting some information from the remaining dataset. For the function $f$ we propose a sigmoid function of the form,
+First of, we might weight by interest. As we are actually only interested in approximating $\mathbb{E}[|\text{Exposure} = 1]$, we might create some transformation function  $f:[0,1]\longrightarrow\mathbb{R}_{>=0}$ and evaluate it in the Exposure to indicate our interest in this observation. With a good choice of $f$, this should allow us to prioritize a precise fit on the observations of high interest, while hopefully still extracting some information from the remaining dataset. For the function $f$ we propose a sigmoid function of the form,
 
 $$w_i = f_{k,l}(x_i):= \frac{\exp((x_i-l)\cdot k)}{1+\exp((x_i-l)\cdot k)}.$$
-The parameters $k$ and $l$ represent a stretching and shifting respectively of the standard sigmoid function. Other functions as well as tuning of these parameters could be considered, but this is seen as out of scope of this project. We will adhoc set our parameters as follows, $k = 12$ and $l = 0.5$, yielding the following function.
+The parameters $k$ and $l$ represent a stretching and shifting respectively of the standard sigmoid function. Other functions, as well as tuning of these hyperparameters, could be considered, but this is seen as out of scope of this project. We will adhoc set our parameters as follows, $k = 12$ and $l = 0.5$, yielding the following transformation function.
 
 ```{r, echo=FALSE}
 x<- seq(from = 0,
@@ -143,8 +143,9 @@ sigmoid <- function(x,k = 12){
 ggplot()+
   geom_line(
     aes(x = x,
-        y = sigmoid(x))
-  )
+        y = sigmoid(x)))+
+  labs(x = "Exposure",
+       y = "weight")
 ```
 
 An alternative weighting approach more inline with standard methods would be to weight to tackle the imbalance with respect to the sign of `ClaimAmount`, as seen in the table below. 
@@ -156,7 +157,7 @@ train |>
   mutate(reciprocal_rel_freq = 1/rel_freq)
 ```
 
-The vast majority of observations about $94.7\%$ have `ClaimAmount` equal to zero, while about just under $5\%$ have a positive sign, leaving less than $0.5\%$ of the training data with a negative sign. One way to deal with this would to weight using the reciprocal relative frequency, which should lead to an equal balancing between the three groups.
+The vast majority of observations about $94.7\%$ have `ClaimAmount` equal to zero, while just under $5\%$ have a positive sign, leaving less than $0.5\%$ of the training data with a negative sign. One way to deal with this would be to weight using the reciprocal relative frequency, which should lead to an equal balancing between the three groups.
 
 One problem with the latter weighting is that it depends on the response, thus it is more troublesome to include in 'mlr3' pipelines. To amend this we have created the function 'add_weight' which takes a Task or data.frame and outputs an object of similar class but with the specified weights. Thus the weighting will appear as a part of the task instead of a part of the learning pipeline. Further we might want to use both weights, for this we simple combine them by multiplication. Note the default of the function `add_weight` is to add both weightings. The implementations can be seen below or found in file extra_pipeops.R on the github repository.
 
@@ -266,10 +267,43 @@ Also to choose our best performing algorithm we decided on the approach of first
 For a more fair comparison of our algorithms we decided on a common encoding strategy across all the learners. We begin with some simple baseline graphs, with no weighting and no custom encoding. Next we create some graphs with our own encoder for the `SocioCateg` variable.
 
 ```{r, eval=FALSE}
-Dummy_lrn <- po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Target_lrn <- po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Dummy_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encode") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
-Target_lrn_custom <- po_VehAge_num %>>% po_VehPrice_int %>>% po_SocCat_int %>>% po("encodeimpact") %>>% po_RecBeg_num %>>% po_RecEnd_rc %>>% po("scale") %>>% lrn_obj |> as_learner()
+Dummy_lrn <- 
+  po("encode") %>>% 
+  po_RecBeg_num %>>% 
+  po_RecEnd_rc %>>% 
+  po("scale") %>>% 
+  lrn_obj |> 
+  as_learner()
+
+Target_lrn <- 
+  po("encodeimpact") %>>% 
+  po_RecBeg_num %>>% 
+  po_RecEnd_rc %>>% 
+  po("scale") %>>% 
+  lrn_obj |> 
+  as_learner()
+
+Dummy_lrn_custom <- 
+  po_VehAge_num %>>% 
+  po_VehPrice_int %>>% 
+  po_SocCat_int %>>% 
+  po("encode") %>>% 
+  po_RecBeg_num %>>% 
+  po_RecEnd_rc %>>% 
+  po("scale") %>>% 
+  lrn_obj |> 
+  as_learner()
+
+Target_lrn_custom <- 
+  po_VehAge_num %>>% 
+  po_VehPrice_int %>>% 
+  po_SocCat_int %>>% 
+  po("encodeimpact") %>>% 
+  po_RecBeg_num %>>% 
+  po_RecEnd_rc %>>% 
+  po("scale") %>>% 
+  lrn_obj |> 
+  as_learner()
 ```
 
 We have chosen these encoding strategies because dummy and target encoding are two commonly used encoding strategies, so it is relevant to compare these. We also deem that turning the categorical features into numerical ones could have an effect, in a the sense that assuming a linear effect of these features could improve performance.
@@ -278,16 +312,22 @@ For testing purposes we then compare these on the normal training task, and also
 
 ```{r,eval=FALSE}
 learner_BM <- benchmark_grid(
-  tasks = list(train_task, add_weight(train_task,weighting = "interest"),add_weight(train_task,weighting = "frequency"),add_weight(train_task)),
-  learners = list(Dumm_lrn, Target_lrn,Dummy_lrn_SocCat,Target_lrn_SocCat),
-  resamplings = rsmp("cv",folds=3)
-)|> benchmark()
+  tasks = list(train_task, 
+               add_weight(train_task,weighting = "interest"),
+               add_weight(train_task,weighting = "frequency"),
+               add_weight(train_task)),
+  learners = list(Dumm_lrn, 
+                  Target_lrn,
+                  Dummy_lrn_SocCat,
+                  Target_lrn_SocCat),
+  resamplings = rsmp("cv",folds=3))|> 
+  benchmark()
 ```
 
 
 ## Glmnet, Gam and ensemble learner
 
-In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners are combined into one. The definition of the learners as well as the benchmarking can be found in the GlmAndGams.R file in the github repository.
+In this section we will investigate the glmnet and gam learners. We will also consider an ensemble learner, where the output from other learners, namely a gam learner and a gradient boosting learner, are combined into one. The definition of the learners as well as the benchmarking can be found in the GlmAndGams.R file in the github repository.
 
 Note, the naming of the encoding are slightly different as opposed to those described in section Encoding Strategies. Here pipes between encodings are indicated by a ".", and the naming of different encodings are as follows,
 
@@ -322,7 +362,7 @@ readRDS("GnG_score_cv5.rds") |>
         legend.position = "bottom")
 
 ```
-In the comparison it is obvious that the choice of measure is indeed important for model selection. A much larger variance is in particular seen for regullar mse for the weighting with interest (ie. the sigmoid transformation of exposure) as opposed to the mse for just exposure = 1 (mse_inter), and this weighting seems way more favorable in the light of the latter measure. From the above plot either no weighting or interest weighting seems more favorable, perhaps with a slight edge for the weighted one. 
+In the comparison it is obvious that the choice of measure is indeed important for model selection. A much larger variance is in particular seen for the regular mse for the weighting with interest (ie. the sigmoid transformation of exposure) as opposed to the mse for just exposure = 1 (mse_inter), and this weighting seems way more favorable in the light of the latter measure. From the above plot either no weighting or interest weighting seems more favorable, perhaps with a slight edge for the weighted one. 
 
 For the encodings, using the numeric encoding of the dates as opposed to the default datefeatures encoding also seems preferable. The effect of the remaining encodings are hard to distinguish in this plot. 
 
@@ -508,6 +548,7 @@ readRDS("bw_train_comp_aggr.rds")|>
     facet_wrap(~measure, scale = "free")+
   theme(legend.position = "bottom")
 ```
+
 Overall it seems that the random forrest learner yields the best predictive performance, thus we would expect this to perform best, when trained on the entire training set and tested on the testing set.
 
 ## On the testing set
@@ -527,7 +568,7 @@ Here we might note, that while the gradient boosting model outperforms both the 
 
 Now, in the table below we consider the different learners predictions for the specified indices on the test set, which all have zero as their true response. These indicies are 11386, 12286, 2119, 2238, 27833 and 27988. They all have not made any insurance claim in 2004, and have a claim amount of 0. The mean squared error for these 6 observations can be seen ind the mse column.
 
-```{r},echo = FALSE}
+```{r,echo = FALSE}
 readRDS("specific_predictions.rds")
 ```
 Now, the xgboost have by far the best predictive performance on the observations, however as seen in the call below, none of these observations have exposure equal to 1. Thus the performance ranking seems inline with the ones described in the earlier table.
@@ -542,7 +583,7 @@ It could be interesting to try predicting the Claimamount for these individuals,
 what<- readRDS("what_if.rds")
 what
 for_plot <- pivot_longer(what,cols=3:8,names_to="Individual",values_to="Predicted_Claimamount")
-for_plot$ClaimInd<-for_plot$ClaimInd %>%as_factor()
+for_plot$ClaimInd<-for_plot$ClaimInd |> as.factor()
 ggplot(for_plot)+geom_point(mapping=aes(x=learner,y=Predicted_Claimamount,shape=ClaimInd,color=Individual))+ylab("Predicted claim amount")
 ```
 
